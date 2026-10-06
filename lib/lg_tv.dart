@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/protocol/webos_messages.dart';
 
 /// LG webOS TV client.
 /// Works on most webOS TVs (2014+) over same Wi-Fi via ws://TV_IP:3000
@@ -26,106 +27,37 @@ class LgTv {
     _stateCtrl.add(LgState(msg, error: error));
   }
 
-  // ---------- Pure helpers (unit-testable, no socket) ----------
-  static Map<String, dynamic> buildRegisterPayload({String? savedKey}) {
-    return {
-      'forcePairing': false,
-      'pairingType': 'PROMPT',
-      if (savedKey != null) 'client-key': savedKey,
-      'manifest': {
-        'manifestVersion': 1,
-        'appVersion': '1.1',
-        'signedAppId': 'com.example.lgremote',
-        'appId': 'com.example.lgremote',
-        'vendorId': '1',
-        'permissions': [
-          'LAUNCH',
-          'LAUNCH_WEBAPP',
-          'APP_TO_APP',
-          'CLOSE',
-          'TEST_OPEN',
-          'CONTROL_AUDIO',
-          'CONTROL_DISPLAY',
-          'CONTROL_INPUT_JOYSTICK',
-          'CONTROL_INPUT_MEDIA_RECORDING',
-          'CONTROL_INPUT_MEDIA_PLAYBACK',
-          'CONTROL_INPUT_TV',
-          'CONTROL_POWER',
-          'CONTROL_NOTIFICATIONS',
-          'CONTROL_TV_SCREEN',
-          'READ_APP_STATUS',
-          'READ_CURRENT_CHANNEL',
-          'READ_INPUT_DEVICE_LIST',
-          'READ_NETWORK_STATE',
-          'READ_RUNNING_APPS',
-          'READ_TV_CHANNEL_LIST',
-          'WRITE_NOTIFICATION_TOAST',
-          'READ_POWER_STATE',
-        ]
-      }
-    };
-  }
+  // ---------- Pure helpers (single source: WebosMessages) ----------
+  static Map<String, dynamic> buildRegisterPayload({String? savedKey}) =>
+      WebosMessages.buildRegisterPayload(savedKey: savedKey);
 
   static Map<String, dynamic> buildRequest(
-      String id, String uri, Map<String, dynamic>? payload) {
-    return {
-      'id': id,
-      'type': 'request',
-      'uri': uri,
-      'payload': payload ?? {},
-    };
-  }
+          String id, String uri, Map<String, dynamic>? payload) =>
+      WebosMessages.buildRequest(id, uri, payload);
 
   /// Parse one SSDP response into {ip,name,location} or null.
   static Map<String, String>? parseSsdpResponse(
-      String text, String senderIp) {
-    final loc = RegExp(r'LOCATION:\s*(.+)', caseSensitive: false)
-        .firstMatch(text)
-        ?.group(1)
-        ?.trim();
-    if (loc == null || loc.isEmpty) return null;
-    final uri = Uri.tryParse(loc);
-    final host = (uri?.host ?? '').isNotEmpty ? uri!.host : senderIp;
-    if (host.isEmpty) return null;
-    final low = text.toLowerCase();
-    final isLg = low.contains('lg') ||
-        low.contains('webos') ||
-        low.contains('netcast');
-    return {
-      'ip': host,
-      'name': isLg ? 'LG webOS TV' : 'Media device',
-      'location': loc,
-    };
-  }
+          String text, String senderIp) =>
+      WebosMessages.parseSsdpResponse(text, senderIp);
 
-  static int clampVolume(int v) => v.clamp(0, 100);
+  static int clampVolume(int v) => WebosMessages.clampVolume(v);
 
   /// Same local network? Compares first 3 octets (e.g. 192.168.1.x).
-  static bool sameSubnet(String a, String b) {
-    List<String> pa = a.trim().split('.'), pb = b.trim().split('.');
-    if (pa.length != 4 || pb.length != 4) return false;
-    for (final p in [...pa, ...pb]) {
-      final n = int.tryParse(p);
-      if (n == null || n < 0 || n > 255) return false;
-    }
-    return pa.sublist(0, 3).join('.') == pb.sublist(0, 3).join('.');
-  }
+  static bool sameSubnet(String a, String b) =>
+      WebosMessages.sameSubnet(a, b);
 
   // ---------- Pointer (Magic-remote cursor) message builders ----------
   // Sent over the pointer socket as plain text lines.
   static String pointerMoveMsg(int dx, int dy) =>
-      'type:move\ndx:$dx\ndy:$dy\n';
-  static String pointerClickMsg() => 'type:click\n';
+      WebosMessages.pointerMoveMsg(dx, dy);
+  static String pointerClickMsg() => WebosMessages.pointerClickMsg();
   static String pointerScrollMsg(int dx, int dy) =>
-      'type:scroll\ndx:$dx\ndy:$dy\n';
-  static String pointerButtonMsg(String name) => 'type:button\nname:$name\n';
+      WebosMessages.pointerScrollMsg(dx, dy);
+  static String pointerButtonMsg(String name) =>
+      WebosMessages.pointerButtonMsg(name);
 
   /// Known webOS app IDs. Anything else can be launched via custom ID.
-  static const Map<String, String> appIds = {
-    'YouTube': 'youtube.leanback.v4',
-    'Netflix': 'netflix',
-    'Live TV': 'com.webos.app.livetv',
-  };
+  static const Map<String, String> appIds = WebosMessages.appIds;
 
   // ---------- Discovery (SSDP) ----------
   // Returns list of {ip, name, location}
@@ -138,15 +70,10 @@ class LgTv {
       return [];
     }
     sock.broadcastEnabled = true;
-    final search = 'M-SEARCH * HTTP/1.1\r\n'
-        'HOST: 239.255.255.250:1900\r\n'
-        'MAN: "ns=01; ns=01;"\r\n'
-        'MX: 2\r\n'
-        'ST: urn:schemas-upnp-org:device:MediaRenderer:1\r\n'
-        '\r\n';
-    final target = InternetAddress('239.255.255.250');
+    final search = WebosMessages.buildMSearch();
+    final target = InternetAddress(WebosMessages.ssdpTarget);
     for (var i = 0; i < 3; i++) {
-      sock.send(utf8.encode(search), target, 1900);
+      sock.send(utf8.encode(search), target, WebosMessages.ssdpPort);
       await Future.delayed(const Duration(milliseconds: 400));
     }
     final sub = sock.listen((e) {
