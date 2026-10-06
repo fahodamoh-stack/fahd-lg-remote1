@@ -7,8 +7,7 @@ class Pressable extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
   final BorderRadius? radius;
-  const Pressable(
-      {super.key, required this.child, this.onTap, this.radius});
+  const Pressable({super.key, required this.child, this.onTap, this.radius});
 
   @override
   State<Pressable> createState() => _PressableState();
@@ -51,8 +50,7 @@ class _StaggerState extends State<Stagger> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(
-        FaMotion.staggerStep * widget.index, () {
+    Future.delayed(FaMotion.staggerStep * widget.index, () {
       if (mounted) setState(() => _in = true);
     });
   }

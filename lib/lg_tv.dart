@@ -36,15 +36,13 @@ class LgTv {
       WebosMessages.buildRequest(id, uri, payload);
 
   /// Parse one SSDP response into {ip,name,location} or null.
-  static Map<String, String>? parseSsdpResponse(
-          String text, String senderIp) =>
+  static Map<String, String>? parseSsdpResponse(String text, String senderIp) =>
       WebosMessages.parseSsdpResponse(text, senderIp);
 
   static int clampVolume(int v) => WebosMessages.clampVolume(v);
 
   /// Same local network? Compares first 3 octets (e.g. 192.168.1.x).
-  static bool sameSubnet(String a, String b) =>
-      WebosMessages.sameSubnet(a, b);
+  static bool sameSubnet(String a, String b) => WebosMessages.sameSubnet(a, b);
 
   // ---------- Pointer (Magic-remote cursor) message builders ----------
   // Sent over the pointer socket as plain text lines.
@@ -128,8 +126,8 @@ class LgTv {
         }
         if (type == 'error' && id.startsWith('register')) {
           if (!registered.isCompleted) {
-            registered.completeError(
-                'TV refused pairing — accept the prompt on TV.');
+            registered
+                .completeError('TV refused pairing — accept the prompt on TV.');
           }
           return;
         }
@@ -185,8 +183,7 @@ class LgTv {
     final c = Completer<Map<String, dynamic>>();
     _pending[id] = c;
     _ch!.sink.add(jsonEncode(buildRequest(id, uri, payload)));
-    return c.future.timeout(const Duration(seconds: 8),
-        onTimeout: () {
+    return c.future.timeout(const Duration(seconds: 8), onTimeout: () {
       _pending.remove(id);
       throw TimeoutException('TV timeout: $uri');
     });
@@ -207,8 +204,8 @@ class LgTv {
       _req('ssap://com.webos.service.ime/sendEnterKey').then((_) {});
   Future<void> exitApp() async {
     try {
-      await _req('ssap://com.webos.applicationManager/closeByAppId',
-          {'id': '*'});
+      await _req(
+          'ssap://com.webos.applicationManager/closeByAppId', {'id': '*'});
     } catch (_) {}
   }
 
@@ -216,8 +213,7 @@ class LgTv {
     try {
       await _req('ssap://com.webos.service.api/input', {'key': key});
     } catch (_) {
-      await _req('ssap://system.notifications/createToast',
-          {'message': key});
+      await _req('ssap://system.notifications/createToast', {'message': key});
     }
   }
 
@@ -225,9 +221,9 @@ class LgTv {
       _req('ssap://system.notifications/createToast', {'message': msg})
           .then((_) {});
 
-  Future<void> openUrl(String url) => _req(
-      'ssap://com.webos.applicationManager/open',
-      {'target': url}).then((_) {});
+  Future<void> openUrl(String url) =>
+      _req('ssap://com.webos.applicationManager/open', {'target': url})
+          .then((_) {});
 
   Future<void> launchApp(String appId, [Map<String, dynamic>? params]) =>
       _req('ssap://com.webos.applicationManager/launch', {

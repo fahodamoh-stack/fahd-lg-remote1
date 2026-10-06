@@ -132,7 +132,8 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       setState(() {
         phoneIp = (ip == null || ip.isEmpty) ? 'Unavailable' : ip;
-        wifiName = (ssid == null || ssid.isEmpty) ? 'Needs location permission' : ssid;
+        wifiName =
+            (ssid == null || ssid.isEmpty) ? 'Needs location permission' : ssid;
       });
     } catch (_) {
       if (!mounted) return;
@@ -184,7 +185,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _cleanErr(Object e) {
-    var s = e.toString().replaceAll('Exception: ', '').replaceAll('TimeoutException: ', '');
+    var s = e
+        .toString()
+        .replaceAll('Exception: ', '')
+        .replaceAll('TimeoutException: ', '');
     if (s.length > 140) s = '${s.substring(0, 140)}…';
     return s;
   }
@@ -257,27 +261,23 @@ class _HomePageState extends State<HomePage> {
                   child: CupertinoSlidingSegmentedControl<int>(
                     key: const Key('segTabs'),
                     groupValue: _tab,
-                    backgroundColor:
-                        Colors.white.withOpacity(0.07),
+                    backgroundColor: Colors.white.withOpacity(0.07),
                     thumbColor: const Color(0xFF3A3A3C),
                     children: const {
                       0: Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 9),
-                        child: Text('Connect',
-                            style: TextStyle(fontSize: 13)),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                        child: Text('Connect', style: TextStyle(fontSize: 13)),
                       ),
                       1: Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 9),
-                        child: Text('Remote',
-                            style: TextStyle(fontSize: 13)),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                        child: Text('Remote', style: TextStyle(fontSize: 13)),
                       ),
                       2: Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 9),
-                        child: Text('Cast',
-                            style: TextStyle(fontSize: 13)),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                        child: Text('Cast', style: TextStyle(fontSize: 13)),
                       ),
                     },
                     onValueChanged: (v) {
@@ -317,7 +317,11 @@ class _HomePageState extends State<HomePage> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF0A84FF), Color(0xFF0055CC), Color(0xFF2B3A8F)],
+                colors: [
+                  Color(0xFF0A84FF),
+                  Color(0xFF0055CC),
+                  Color(0xFF2B3A8F)
+                ],
               ),
               boxShadow: [
                 BoxShadow(
@@ -356,8 +360,8 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
         color: on ? const Color(0xFF123B2A) : const Color(0xFF2C2C2E),
-        border: Border.all(
-            color: on ? const Color(0xFF2FD57F) : Colors.white12),
+        border:
+            Border.all(color: on ? const Color(0xFF2FD57F) : Colors.white12),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Container(
@@ -424,12 +428,9 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 10),
           _netRow('Phone IP', phoneIp),
           _netRow('Wi-Fi name', wifiName),
-          _netRow('TV IP',
-              tvIp.isEmpty ? '— enter below —' : tvIp),
-          _netRow('Same network',
-              tvIp.isEmpty
-                  ? '…'
-                  : (same ? 'Yes ✔' : 'No ✘'),
+          _netRow('TV IP', tvIp.isEmpty ? '— enter below —' : tvIp),
+          _netRow(
+              'Same network', tvIp.isEmpty ? '…' : (same ? 'Yes ✔' : 'No ✘'),
               good: tvIp.isEmpty ? null : same),
           Row(children: [
             const Text('Sound effects',
@@ -458,7 +459,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 6),
           const Text(
               'Phone and LG TV must be on the same Wi-Fi network. On TV: Settings → Network → Wi-Fi Connection.',
-              style: TextStyle(color: Colors.white54, fontSize: 13, height: 1.5)),
+              style:
+                  TextStyle(color: Colors.white54, fontSize: 13, height: 1.5)),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(
@@ -498,16 +500,14 @@ class _HomePageState extends State<HomePage> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color: Colors.white.withOpacity(0.04),
-                      border: Border.all(
-                          color: Colors.white.withOpacity(0.08)),
+                      border: Border.all(color: Colors.white.withOpacity(0.08)),
                     ),
                     child: Row(children: [
                       const Icon(Icons.tv, color: Color(0xFFFF9F0A)),
                       const SizedBox(width: 12),
                       Expanded(
                           child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                             Text(devices[i]['name'] ?? 'LG TV',
                                 style: const TextStyle(
@@ -533,8 +533,7 @@ class _HomePageState extends State<HomePage> {
             key: const Key('tvIpField'),
             controller: ipCtrl,
             onChanged: (_) => setState(() {}),
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
               hintText: '192.168.1.50',
               prefixIcon: const Icon(Icons.lan_outlined),
@@ -573,7 +572,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 8),
           const Text(
               'First time the TV shows “Allow connection?” — press Allow. The key is saved, next time auto-pairs.',
-              style: TextStyle(color: Colors.white38, fontSize: 12, height: 1.5)),
+              style:
+                  TextStyle(color: Colors.white38, fontSize: 12, height: 1.5)),
           if (connected)
             TextButton.icon(
               onPressed: () {
@@ -611,8 +611,7 @@ class _HomePageState extends State<HomePage> {
               const Text('Touchpad',
                   style: TextStyle(fontWeight: FontWeight.w800)),
               Text(ptrOk ? 'pointer live ✔' : 'pointer off — arrows work',
-                  style: const TextStyle(
-                      color: Colors.white38, fontSize: 11)),
+                  style: const TextStyle(color: Colors.white38, fontSize: 11)),
             ],
           ),
           const SizedBox(height: 4),
@@ -624,37 +623,38 @@ class _HomePageState extends State<HomePage> {
             button: true,
             child: GestureDetector(
               key: const Key('touchpad'),
-            onPanUpdate: (d) {
-              if (!connected) return;
-              tv.pointerMove((d.delta.dx * 1.8).round(),
-                      (d.delta.dy * 1.8).round())
-                  .catchError((_) {});
-            },
-            onTap: () {
-              if (!connected) {
-                _snack('Connect to a TV first', err: true);
-                return;
-              }
-              if (tv.pointerReady) {
-                tv.pointerClick().catchError((_) {});
-              } else {
-                _run(() => tv.sendKey('ok'));
-              }
-            },
-            child: Container(
-              height: 132,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Colors.white.withOpacity(0.06),
-                border: Border.all(
-                    color: ptrOk
-                        ? const Color(0xFF0A84FF)
-                        : Colors.white.withOpacity(0.1)),
+              onPanUpdate: (d) {
+                if (!connected) return;
+                tv
+                    .pointerMove(
+                        (d.delta.dx * 1.8).round(), (d.delta.dy * 1.8).round())
+                    .catchError((_) {});
+              },
+              onTap: () {
+                if (!connected) {
+                  _snack('Connect to a TV first', err: true);
+                  return;
+                }
+                if (tv.pointerReady) {
+                  tv.pointerClick().catchError((_) {});
+                } else {
+                  _run(() => tv.sendKey('ok'));
+                }
+              },
+              child: Container(
+                height: 132,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white.withOpacity(0.06),
+                  border: Border.all(
+                      color: ptrOk
+                          ? const Color(0xFF0A84FF)
+                          : Colors.white.withOpacity(0.1)),
+                ),
+                alignment: Alignment.center,
+                child: const Text('Touchpad',
+                    style: TextStyle(color: Colors.white38, fontSize: 13)),
               ),
-              alignment: Alignment.center,
-              child: const Text('Touchpad',
-                  style: TextStyle(color: Colors.white38, fontSize: 13)),
-            ),
             ),
           ),
         ]),
@@ -683,8 +683,7 @@ class _HomePageState extends State<HomePage> {
           Row(children: [
             const Icon(Icons.volume_up_outlined, color: Color(0xFFFF9F0A)),
             const SizedBox(width: 8),
-            const Text('Volume',
-                style: TextStyle(fontWeight: FontWeight.w800)),
+            const Text('Volume', style: TextStyle(fontWeight: FontWeight.w800)),
             const Spacer(),
             Switch(
                 key: const Key('muteSwitch'),
@@ -711,10 +710,9 @@ class _HomePageState extends State<HomePage> {
           ]),
           const SizedBox(height: 4),
           Row(children: [
-            _pillBtn(Icons.keyboard_arrow_up, 'Ch +',
-                () => _run(tv.channelUp)),
-            _pillBtn(Icons.keyboard_arrow_down, 'Ch −',
-                () => _run(tv.channelDown)),
+            _pillBtn(Icons.keyboard_arrow_up, 'Ch +', () => _run(tv.channelUp)),
+            _pillBtn(
+                Icons.keyboard_arrow_down, 'Ch −', () => _run(tv.channelDown)),
             _pillBtn(Icons.power_settings_new, 'Off',
                 () => _run(tv.powerOff, 'TV turning off…')),
           ]),
@@ -731,12 +729,10 @@ class _HomePageState extends State<HomePage> {
             crossAxisSpacing: 10,
             childAspectRatio: 1.6,
             children: [
-              _appTile('YouTube', Icons.play_circle_fill,
-                  () => _run(tv.youtube)),
-              _appTile('Netflix', Icons.movie_outlined,
-                  () => _run(tv.netflix)),
-              _appTile('Live TV', Icons.tv_outlined,
-                  () => _run(tv.liveTv)),
+              _appTile(
+                  'YouTube', Icons.play_circle_fill, () => _run(tv.youtube)),
+              _appTile('Netflix', Icons.movie_outlined, () => _run(tv.netflix)),
+              _appTile('Live TV', Icons.tv_outlined, () => _run(tv.liveTv)),
             ],
           ),
           const SizedBox(height: 12),
@@ -924,7 +920,9 @@ class _HomePageState extends State<HomePage> {
                 fontWeight: FontWeight.w700,
                 color: good == null
                     ? Colors.white
-                    : (good ? const Color(0xFF30D158) : const Color(0xFFFF453A)))),
+                    : (good
+                        ? const Color(0xFF30D158)
+                        : const Color(0xFFFF453A)))),
       ]),
     );
   }
@@ -965,8 +963,7 @@ class _HomePageState extends State<HomePage> {
               Icon(icon, size: 19),
               const SizedBox(height: 4),
               Text(label,
-                  style:
-                      const TextStyle(fontSize: 11, color: Colors.white70)),
+                  style: const TextStyle(fontSize: 11, color: Colors.white70)),
             ]),
           ),
         ),
@@ -1022,16 +1019,21 @@ class _HomePageState extends State<HomePage> {
           alignment: Alignment.center,
           children: [
             Positioned(
-                top: 0, child: btn(Icons.keyboard_arrow_up, () => _run(() => tv.sendKey('up')))),
+                top: 0,
+                child: btn(Icons.keyboard_arrow_up,
+                    () => _run(() => tv.sendKey('up')))),
             Positioned(
                 bottom: 0,
-                child: btn(Icons.keyboard_arrow_down, () => _run(() => tv.sendKey('down')))),
+                child: btn(Icons.keyboard_arrow_down,
+                    () => _run(() => tv.sendKey('down')))),
             Positioned(
                 left: 0,
-                child: btn(Icons.keyboard_arrow_left, () => _run(() => tv.sendKey('left')))),
+                child: btn(Icons.keyboard_arrow_left,
+                    () => _run(() => tv.sendKey('left')))),
             Positioned(
                 right: 0,
-                child: btn(Icons.keyboard_arrow_right, () => _run(() => tv.sendKey('right')))),
+                child: btn(Icons.keyboard_arrow_right,
+                    () => _run(() => tv.sendKey('right')))),
             Pressable(
               onTap: () => _run(() => tv.sendKey('ok')),
               child: Container(
@@ -1047,8 +1049,8 @@ class _HomePageState extends State<HomePage> {
                 ),
                 alignment: Alignment.center,
                 child: const Text('OK',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w900, fontSize: 17)),
+                    style:
+                        TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
               ),
             ),
           ],

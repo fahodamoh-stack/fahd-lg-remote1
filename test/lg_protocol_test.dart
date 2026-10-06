@@ -7,8 +7,7 @@ void main() {
       final p = LgTv.buildRegisterPayload();
       expect(p['pairingType'], 'PROMPT');
       expect(p['forcePairing'], false);
-      final perms =
-          (p['manifest'] as Map)['permissions'] as List;
+      final perms = (p['manifest'] as Map)['permissions'] as List;
       expect(perms, contains('WRITE_NOTIFICATION_TOAST'));
       expect(perms, contains('CONTROL_AUDIO'));
       expect(p.containsKey('client-key'), false);
@@ -50,7 +49,8 @@ void main() {
     });
 
     test('non-LG labeled generic', () {
-      const other = 'HTTP/1.1 200 OK\r\nLOCATION: http://10.0.0.9:80/x.xml\r\n\r\n';
+      const other =
+          'HTTP/1.1 200 OK\r\nLOCATION: http://10.0.0.9:80/x.xml\r\n\r\n';
       final out = LgTv.parseSsdpResponse(other, '10.0.0.9');
       expect(out!['name'], 'Media device');
     });

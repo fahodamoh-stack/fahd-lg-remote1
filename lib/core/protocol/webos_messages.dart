@@ -70,21 +70,18 @@ abstract final class WebosMessages {
       '\r\n';
 
   /// Parse one SSDP response into {ip,name,location} or null.
-  static Map<String, String>? parseSsdpResponse(
-      String text, String senderIp) {
+  static Map<String, String>? parseSsdpResponse(String text, String senderIp) {
     final loc = RegExp(r'LOCATION:\s*(.+)', caseSensitive: false)
         .firstMatch(text)
         ?.group(1)
         ?.trim();
     if (loc == null || loc.isEmpty) return null;
     final uri = Uri.tryParse(loc);
-    final host =
-        (uri?.host ?? '').isNotEmpty ? uri!.host : senderIp;
+    final host = (uri?.host ?? '').isNotEmpty ? uri!.host : senderIp;
     if (host.isEmpty) return null;
     final low = text.toLowerCase();
-    final isLg = low.contains('lg') ||
-        low.contains('webos') ||
-        low.contains('netcast');
+    final isLg =
+        low.contains('lg') || low.contains('webos') || low.contains('netcast');
     return {
       'ip': host,
       'name': isLg ? 'LG webOS TV' : 'Media device',
@@ -114,13 +111,11 @@ abstract final class WebosMessages {
   }
 
   // ---------- Pointer (Magic-remote cursor) frames ----------
-  static String pointerMoveMsg(int dx, int dy) =>
-      'type:move\ndx:$dx\ndy:$dy\n';
+  static String pointerMoveMsg(int dx, int dy) => 'type:move\ndx:$dx\ndy:$dy\n';
   static String pointerClickMsg() => 'type:click\n';
   static String pointerScrollMsg(int dx, int dy) =>
       'type:scroll\ndx:$dx\ndy:$dy\n';
-  static String pointerButtonMsg(String name) =>
-      'type:button\nname:$name\n';
+  static String pointerButtonMsg(String name) => 'type:button\nname:$name\n';
 
   /// Known webOS app IDs. Anything else launches via custom ID.
   static const Map<String, String> appIds = {
