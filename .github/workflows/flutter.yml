@@ -31,7 +31,7 @@ jobs:
       - name: Analyze
         run: flutter analyze lib test
       - name: Run tests
-        run: flutter test -r expanded 2>&1 | tee test-output.txt | tail -n 60; test ${PIPESTATUS[0]} -eq 0
+        run: flutter test -r expanded
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
