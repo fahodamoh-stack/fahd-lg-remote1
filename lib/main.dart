@@ -500,7 +500,8 @@ class _HomePageState extends State<HomePage> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color: Colors.white.withValues(alpha: 0.04),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08)),
                     ),
                     child: Row(children: [
                       const Icon(Icons.tv, color: Color(0xFFFF9F0A)),
