@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAHD — LG Remote (تجربة ويب)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:Segoe UI, Tahoma, Arial, sans-serif; background:#0B0E17; color:#f4f1ea; min-height:100vh; }
+  body::before { content:""; position:fixed; top:-80px; left:-60px; width:280px; height:280px; border-radius:50%;
+    background:radial-gradient(circle, rgba(229,72,77,.28), transparent 70%); pointer-events:none; }
+  body::after { content:""; position:fixed; top:120px; right:-80px; width:260px; height:260px; border-radius:50%;
+    background:radial-gradient(circle, rgba(43,58,143,.35), transparent 70%); pointer-events:none; }
+  .wrap { max-width:520px; margin:0 auto; padding:18px 16px 40px; position:relative; z-index:1; }
+  .head { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .logo { width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    font-size:24px; background:linear-gradient(135deg,#E5484D,#7C2D6B,#2B3A8F);
+    box-shadow:0 6px 18px rgba(229,72,77,.35); }
+  .head h1 { font-size:20px; letter-spacing:3px; font-weight:900; }
+  .head small { color:#ffffff8a; font-size:12px; }
+  .dot { margin-inline-start:auto; font-size:11px; font-weight:700; padding:7px 12px; border-radius:999px;
+    background:#1A2136; border:1px solid #ffffff1f; }
+  .dot.on { background:#123B2A; border-color:#2FD57F; color:#2FD57F; }
+  .status { background:#ffffff0d; border:1px solid #ffffff17; border-radius:14px;
+    padding:11px 14px; font-size:13px; color:#ffffffb3; margin-bottom:10px; }
+  .tabs { display:flex; gap:6px; margin-bottom:12px; }
+  .tabs button { flex:1; padding:11px; border-radius:12px; border:1px solid #ffffff17; background:#ffffff0a;
+    color:#fff; font-weight:700; cursor:pointer; font-size:14px; }
+  .tabs button.on { background:#E5484D; border-color:#E5484D; }
+  .card { background:#121624e6; border:1px solid #ffffff14; border-radius:20px; padding:16px;
+    margin-bottom:12px; box-shadow:0 10px 24px #00000066; }
+  .card h3 { font-size:15px; margin-bottom:6px; }
+  .card p { color:#ffffff8a; font-size:13px; line-height:1.7; margin-bottom:10px; }
+  input { width:100%; padding:12px; border-radius:12px; border:none; background:#ffffff0d; color:#fff;
+    font-size:14px; margin-bottom:10px; direction:ltr; text-align:left; }
+  .btn { width:100%; padding:13px; border-radius:14px; border:none; font-weight:800; font-size:14px;
+    cursor:pointer; margin-bottom:8px; }
+  .btn.red { background:#E5484D; color:#fff; }
+  .btn.white { background:#fff; color:#000; }
+  .btn.ghost { background:transparent; color:#fff; border:1px solid #E5484D; }
+  .row { display:flex; gap:8px; }
+  .pill { flex:1; padding:11px 4px; border-radius:12px; background:#ffffff0f; border:1px solid #ffffff14;
+    color:#fff; cursor:pointer; font-size:12px; }
+  .pill:active { background:#E5484D; }
+  .dpad { width:210px; height:210px; margin:6px auto; position:relative; }
+  .dpad button { position:absolute; width:60px; height:60px; border-radius:50%;
+    background:#ffffff0f; border:1px solid #ffffff1a; color:#fff; font-size:20px; cursor:pointer; }
+  .dpad .u { top:0; left:75px; } .dpad .d { bottom:0; left:75px; }
+  .dpad .l { left:0; top:75px; } .dpad .r { right:0; top:75px; }
+  .dpad .ok { left:66px; top:66px; width:78px; height:78px; font-weight:900; font-size:17px;
+    background:linear-gradient(135deg,#E5484D,#8E2B5E); border:none; }
+  .hidden { display:none; }
+  .note { font-size:12px; color:#ffffff63; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="logo">📺</div>
+    <div><h1>FAHD</h1><small>LG webOS remote • نسخة تجربة</small></div>
+    <div class="dot" id="dot">OFFLINE</div>
+  </div>
+  <div class="status" id="status">مش متوصل — الموبايل والتلفزيون لازم نفس الواي فاي</div>
+  <div class="tabs">
+    <button id="t0" class="on" onclick="tab(0)">الاتصال</button>
+    <button id="t1" onclick="tab(1)">الريموت</button>
+    <button id="t2" onclick="tab(2)">الكاست</button>
+  </div>
+
+  <div id="p0">
+    <div class="card">
+      <h3>1 — نفس الواي فاي</h3>
+      <p>المتصفح ميقدرش يدور تلقائيا (SSDP)، فهات IP التلفزيون يدوي: من التلفزيون Settings ← Network ← Wi-Fi Connection.</p>
+      <input id="ip" placeholder="192.168.1.50">
+      <button class="btn red" onclick="connect()">اتصال و Pairing</button>
+      <button class="btn ghost" onclick="disconnect()">قطع الاتصال</button>
+      <div class="note">أول مرة التلفزيون هيعرض "Allow؟" — دوس Allow. المفتاح بيتحفظ في المتصفح.</div>
+    </div>
+  </div>
+
+  <div id="p1" class="hidden">
+    <div class="card">
+      <h3>الأسهم</h3>
+      <div class="dpad">
+        <button class="u" onclick="key('up')">▲</button>
+        <button class="d" onclick="key('down')">▼</button>
+        <button class="l" onclick="key('left')">◀</button>
+        <button class="r" onclick="key('right')">▶</button>
+        <button class="ok" onclick="key('ok')">OK</button>
+      </div>
+      <div class="row">
+        <button class="pill" onclick="cmd('ssap://com.webos.applicationManager/launch',{id:'com.webos.app.home'})">Home</button>
+        <button class="pill" onclick="cmd('ssap://com.webos.service.ime/sendEnterKey',{})">Back</button>
+        <button class="pill" onclick="cmd('ssap://audio/volumeUp',{})">Vol +</button>
+        <button class="pill" onclick="cmd('ssap://audio/volumeDown',{})">Vol −</button>
+      </div><br>
+      <div class="row">
+        <button class="pill" onclick="cmd('ssap://audio/setMuted',{muted:true})">كتم</button>
+        <button class="pill" onclick="cmd('ssap://tv/channelUp',{})">قناة +</button>
+        <button class="pill" onclick="cmd('ssap://tv/channelDown',{})">قناة −</button>
+        <button class="pill" onclick="cmd('ssap://com.webos.app.livetv'.replace('com.webos.app.livetv','com.webos.applicationManager/launch'),{id:'com.webos.app.livetv'})">مباشر</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>رسالة على الشاشة</h3>
+      <input id="toast" placeholder="اكتب رسالة...">
+      <button class="btn white" onclick="cmd('ssap://system.notifications/createToast',{message:document.getElementById('toast').value||'FAHD'})">عرض على التلفزيون</button>
+    </div>
+  </div>
+
+  <div id="p2" class="hidden">
+    <div class="card">
+      <h3>يوتيوب</h3>
+      <p>الصق لينك يوتيوب وهيفتح على التلفزيون فورا.</p>
+      <input id="yt" placeholder="https://youtube.com/watch?v=...">
+      <button class="btn red" onclick="openYT()">تشغيل على التلفزيون</button>
+    </div>
+    <div class="card">
+      <h3>لينك مباشر</h3>
+      <p>أي لينك mp4 / صورة / صفحة على نفس الشبكة.</p>
+      <input id="url" placeholder="https://.../video.mp4">
+      <button class="btn ghost" onclick="cmd('ssap://com.webos.applicationManager/open',{target:document.getElementById('url').value})">فتح على التلفزيون</button><br><br>
+      <div class="row">
+        <button class="pill" onclick="cmd('ssap://media.controls/play',{})">تشغيل</button>
+        <button class="pill" onclick="cmd('ssap://media.controls/pause',{})">إيقاف</button>
+        <button class="pill" onclick="cmd('ssap://media.controls/stop',{})">إنهاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let ws=null, id=0, pending={}, connected=false, myIp='';
+function setStatus(s){ document.getElementById('status').textContent=s; }
+function setDot(on){ const d=document.getElementById('dot'); d.textContent=on?'LIVE':'OFFLINE'; d.classList.toggle('on',on); }
+function tab(n){ [0,1,2].forEach(i=>{ document.getElementById('p'+i).classList.toggle('hidden',i!==n); document.getElementById('t'+i).classList.toggle('on',i===n); }); }
+function connect(){
+  const ip=document.getElementById('ip').value.trim();
+  if(!ip){ setStatus('اكتب IP التلفزيون الأول'); return; }
+  myIp=ip; disconnect(true);
+  setStatus('بتصل بـ '+ip+' — اقبل Allow على شاشة التلفزيون...');
+  try{ ws=new WebSocket('ws://'+ip+':3000'); }catch(e){ setStatus('فشل الاتصال: '+e); return; }
+  const key=localStorage.getItem('lg_client_key');
+  ws.onopen=()=>{ ws.send(JSON.stringify({type:'register',id:'register_0',payload:Object.assign(
+    {forcePairing:false,pairingType:'PROMPT',manifest:{manifestVersion:1,appVersion:'1.1',
+    signedAppId:'com.example.fahd',appId:'com.example.fahd',vendorId:'1',
+    permissions:['LAUNCH','LAUNCH_WEBAPP','CLOSE','CONTROL_AUDIO','CONTROL_DISPLAY','CONTROL_INPUT_TV',
+    'CONTROL_POWER','CONTROL_NOTIFICATIONS','READ_RUNNING_APPS','READ_TV_CHANNEL_LIST',
+    'WRITE_NOTIFICATION_TOAST','READ_POWER_STATE']}}, key?{'client-key':key}:{})})); };
+  ws.onmessage=(ev)=>{ let m; try{m=JSON.parse(ev.data);}catch(e){return;}
+    if(m.type==='registered'){ const k=m.payload&&m.payload['client-key'];
+      if(k) localStorage.setItem('lg_client_key',k);
+      connected=true; setDot(true); setStatus('متصل بـ '+ip+' ✔'); tab(1); return; }
+    if(m.id&&pending[m.id]){ pending[m.id](m); delete pending[m.id]; } };
+  ws.onerror=()=>setStatus('خطأ اتصال — تأكد إنك نفس الواي فاي وإن الـ IP صح');
+  ws.onclose=()=>{ if(connected){connected=false;setDot(false);setStatus('انقطع الاتصال');} };
+  setTimeout(()=>{ if(!connected&&ws&&ws.readyState===1) setStatus('مستني Allow على التلفزيون... دوس Allow على الشاشة'); },4000);
+}
+function disconnect(silent){ try{ws&&ws.close();}catch(e){} ws=null; connected=false; setDot(false); if(!silent) setStatus('انقطع الاتصال'); }
+function cmd(uri,payload){
+  return new Promise((res,rej)=>{
+    if(!connected||!ws){ setStatus('اتصل بالتلفزيون الأول'); return rej('offline'); }
+    id++; const my='req_'+id; pending[my]=res;
+    ws.send(JSON.stringify({id:my,type:'request',uri:uri,payload:payload||{}}));
+    setTimeout(()=>{ if(pending[my]){delete pending[my]; rej('timeout');} },8000);
+  }).catch(e=>setStatus('التلفزيون مردش: '+e));
+}
+function key(k){ cmd('ssap://com.webos.service.api/input',{key:k}); }
+function openYT(){ const v=document.getElementById('yt').value.trim();
+  if(!v) return cmd('ssap://com.webos.applicationManager/launch',{id:'youtube.leanback.v4'});
+  cmd('ssap://com.webos.applicationManager/launch',{id:'youtube.leanback.v4',contentTarget:v}); }
+</script>
+</body>
+</html>
