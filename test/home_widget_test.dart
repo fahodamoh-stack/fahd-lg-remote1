@@ -28,8 +28,7 @@ void main() {
       expect(find.textContaining('Not connected'), findsOneWidget);
     });
 
-    testWidgets('connect tab: network card + scan + manual IP',
-        (t) async {
+    testWidgets('connect tab: network card + scan + manual IP', (t) async {
       await pumpApp(t);
       expect(find.text('Network'), findsOneWidget);
       expect(find.text('Phone IP'), findsOneWidget);
@@ -79,16 +78,14 @@ void main() {
     });
 
     testWidgets('remembers last TV IP across restarts', (t) async {
-      SharedPreferences.setMockInitialValues(
-          {'fa_last_ip': '192.168.1.50'});
+      SharedPreferences.setMockInitialValues({'fa_last_ip': '192.168.1.50'});
       await pumpApp(t);
       for (var i = 0; i < 5; i++) {
         await t.pump(const Duration(milliseconds: 100));
       }
       await scrollTo(t, find.byKey(const Key('tvIpField')));
       final fields = t.widgetList<TextField>(find.byType(TextField));
-      expect(fields.any((f) => f.controller?.text == '192.168.1.50'),
-          true);
+      expect(fields.any((f) => f.controller?.text == '192.168.1.50'), true);
       expect(find.text('Forget saved TV'), findsOneWidget);
     });
   });
