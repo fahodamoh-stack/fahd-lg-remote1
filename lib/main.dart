@@ -12,7 +12,7 @@ class LgRemoteApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Lumina — LG Remote',
+      title: 'FAHD — LG Remote',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -209,7 +209,7 @@ class _HomePageState extends State<HomePage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('LUMINA',
+                Text('FAHD',
                     style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,

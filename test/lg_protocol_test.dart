@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lg_remote/lg_tv.dart';
+import 'package:fahd_lg_remote/lg_tv.dart';
 
 void main() {
   group('register payload', () {
