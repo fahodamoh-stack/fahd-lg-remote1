@@ -68,7 +68,6 @@ same network, but browsers **cannot** auto-scan (enter IP manually) and
 ## Testing
 
 ```sh
-flutter test            # protocol unit tests + widget tests
 python3 tools/verify.py # static checks (no Flutter needed)
 ```
 

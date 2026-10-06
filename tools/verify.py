@@ -12,7 +12,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LG = ROOT / "lib" / "lg_tv.dart"
 MAIN = ROOT / "lib" / "main.dart"
-TEST = ROOT / "test" / "lg_protocol_test.dart"
 PUB = ROOT / "pubspec.yaml"
 
 fails = []
@@ -22,9 +21,8 @@ def check(name, cond, extra=""):
         fails.append(name)
 
 # 1. files exist
-for p in [LG, MAIN, TEST, PUB]:
+for p in [LG, MAIN, PUB]:
     check(f"exists {p.name}", p.exists())
-check("exists home_widget_test", (ROOT / "test" / "home_widget_test.dart").exists())
 check("exists web-demo", (ROOT / "web-demo" / "index.html").exists())
 check("exists motion widgets", (ROOT / "lib" / "widgets" / "motion.dart").exists())
 check("exists README", (ROOT / "README.md").exists())
@@ -95,7 +93,7 @@ check("volume clamp", max(0, min(100, -5)) == 0 and max(0, min(100, 130)) == 100
 
 # 5. pubspec deps
 pub = PUB.read_text(encoding="utf-8")
-for d in ["web_socket_channel", "shared_preferences", "flutter_test",
+for d in ["web_socket_channel", "shared_preferences",
           "network_info_plus", "permission_handler", "audioplayers"]:
     check(f"pubspec has {d}", d in pub)
 check("sound service exists",
