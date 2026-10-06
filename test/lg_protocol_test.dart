@@ -63,4 +63,37 @@ void main() {
       expect(LgTv.clampVolume(130), 100);
     });
   });
+
+  group('same network', () {
+    test('same /24 -> true', () {
+      expect(LgTv.sameSubnet('192.168.1.50', '192.168.1.7'), true);
+    });
+    test('different subnet -> false', () {
+      expect(LgTv.sameSubnet('192.168.1.50', '192.168.2.7'), false);
+    });
+    test('bad input -> false', () {
+      expect(LgTv.sameSubnet('abc', '192.168.1.7'), false);
+      expect(LgTv.sameSubnet('', ''), false);
+      expect(LgTv.sameSubnet('192.168.1.999', '192.168.1.7'), false);
+    });
+  });
+
+  group('pointer messages', () {
+    test('move format', () {
+      expect(LgTv.pointerMoveMsg(5, -3), 'type:move\ndx:5\ndy:-3\n');
+    });
+    test('click / scroll / button format', () {
+      expect(LgTv.pointerClickMsg(), 'type:click\n');
+      expect(LgTv.pointerScrollMsg(0, -10), 'type:scroll\ndx:0\ndy:-10\n');
+      expect(LgTv.pointerButtonMsg('HOME'), 'type:button\nname:HOME\n');
+    });
+  });
+
+  group('apps', () {
+    test('known IDs', () {
+      expect(LgTv.appIds['YouTube'], 'youtube.leanback.v4');
+      expect(LgTv.appIds['Netflix'], 'netflix');
+      expect(LgTv.appIds['Live TV'], 'com.webos.app.livetv');
+    });
+  });
 }

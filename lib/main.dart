@@ -1,5 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:network_info_plus/network_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'lg_tv.dart';
 
 void main() {
@@ -17,12 +20,12 @@ class LgRemoteApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0B0E17),
+        scaffoldBackgroundColor: const Color(0xFF000000),
         fontFamily: 'Roboto',
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFE5484D),
-          secondary: Color(0xFFF5B638),
-          surface: Color(0xFF121624),
+          primary: Color(0xFF0A84FF),
+          secondary: Color(0xFFFF9F0A),
+          surface: Color(0xFF1C1C1E),
         ),
       ),
       home: const HomePage(),
@@ -36,10 +39,9 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage> {
   final LgTv tv = LgTv();
-  late TabController _tabs;
+  int _tab = 0;
   bool busy = false;
   bool connected = false;
   String status = 'Not connected — same Wi-Fi as the TV';
@@ -48,28 +50,58 @@ class _HomePageState extends State<HomePage>
   final toastCtrl = TextEditingController();
   final urlCtrl = TextEditingController();
   final ytCtrl = TextEditingController();
+  final appIdCtrl = TextEditingController();
   double volume = 20;
   bool muted = false;
+  String phoneIp = '…';
+  String wifiName = '…';
+  bool ptrOk = false;
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
     tv.states.listen((s) {
       if (!mounted) return;
       setState(() => status = s.message);
       if (s.error) _snack(s.message, err: true);
     });
+    _loadNet();
+  }
+
+  /// Read connected-network info (IP always; SSID needs location
+  /// permission on Android — requested once, failures stay silent).
+  Future<void> _loadNet() async {
+    try {
+      final info = NetworkInfo();
+      final ip = await info.getWifiIP();
+      String? ssid;
+      try {
+        if (await Permission.locationWhenInUse.request().isGranted) {
+          ssid = await info.getWifiName();
+        }
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() {
+        phoneIp = (ip == null || ip.isEmpty) ? 'Unavailable' : ip;
+        wifiName = (ssid == null || ssid.isEmpty) ? 'Needs location permission' : ssid;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        phoneIp = 'Unavailable';
+        wifiName = 'Unavailable';
+      });
+    }
   }
 
   @override
   void dispose() {
     tv.dispose();
-    _tabs.dispose();
     ipCtrl.dispose();
     toastCtrl.dispose();
     urlCtrl.dispose();
     ytCtrl.dispose();
+    appIdCtrl.dispose();
     super.dispose();
   }
 
@@ -77,7 +109,7 @@ class _HomePageState extends State<HomePage>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(m, maxLines: 3, overflow: TextOverflow.ellipsis),
-      backgroundColor: err ? const Color(0xFF3A1416) : const Color(0xFF1A2136),
+      backgroundColor: err ? const Color(0xFF3A1416) : const Color(0xFF2C2C2E),
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 3),
     ));
@@ -129,8 +161,15 @@ class _HomePageState extends State<HomePage>
       setState(() {
         connected = true;
         status = 'Connected to $ip';
+        _tab = 1;
       });
-      _tabs.animateTo(1);
+      try {
+        await tv.connectPointer();
+        if (mounted) setState(() => ptrOk = true);
+      } catch (_) {
+        if (mounted) setState(() => ptrOk = false);
+      }
+      _loadNet();
       _snack('Connected — pairing saved');
     } catch (e) {
       setState(() => status = _cleanErr(e));
@@ -151,20 +190,41 @@ class _HomePageState extends State<HomePage>
               children: [
                 _header(),
                 _statusPill(),
-                TabBar(
-                  controller: _tabs,
-                  indicatorColor: const Color(0xFFE5484D),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white54,
-                  tabs: const [
-                    Tab(text: 'Connect'),
-                    Tab(text: 'Remote'),
-                    Tab(text: 'Cast'),
-                  ],
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  child: CupertinoSlidingSegmentedControl<int>(
+                    groupValue: _tab,
+                    backgroundColor:
+                        Colors.white.withOpacity(0.07),
+                    thumbColor: const Color(0xFF3A3A3C),
+                    children: const {
+                      0: Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 9),
+                        child: Text('Connect',
+                            style: TextStyle(fontSize: 13)),
+                      ),
+                      1: Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 9),
+                        child: Text('Remote',
+                            style: TextStyle(fontSize: 13)),
+                      ),
+                      2: Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 9),
+                        child: Text('Cast',
+                            style: TextStyle(fontSize: 13)),
+                      ),
+                    },
+                    onValueChanged: (v) =>
+                        setState(() => _tab = v ?? 0),
+                  ),
                 ),
                 Expanded(
-                  child: TabBarView(
-                    controller: _tabs,
+                  child: IndexedStack(
+                    index: _tab,
                     children: [
                       _connectTab(),
                       _remoteTab(),
@@ -193,11 +253,11 @@ class _HomePageState extends State<HomePage>
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFFE5484D), Color(0xFF7C2D6B), Color(0xFF2B3A8F)],
+                colors: [Color(0xFF0A84FF), Color(0xFF0055CC), Color(0xFF2B3A8F)],
               ),
               boxShadow: [
                 BoxShadow(
-                    color: const Color(0xFFE5484D).withOpacity(0.35),
+                    color: const Color(0xFF0A84FF).withOpacity(0.35),
                     blurRadius: 18,
                     offset: const Offset(0, 6)),
               ],
@@ -231,7 +291,7 @@ class _HomePageState extends State<HomePage>
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: on ? const Color(0xFF123B2A) : const Color(0xFF1A2136),
+        color: on ? const Color(0xFF123B2A) : const Color(0xFF2C2C2E),
         border: Border.all(
             color: on ? const Color(0xFF2FD57F) : Colors.white12),
       ),
@@ -241,7 +301,7 @@ class _HomePageState extends State<HomePage>
           height: 8,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: on ? const Color(0xFF2FD57F) : const Color(0xFFE5484D),
+            color: on ? const Color(0xFF2FD57F) : const Color(0xFF0A84FF),
           ),
         ),
         const SizedBox(width: 6),
@@ -283,9 +343,37 @@ class _HomePageState extends State<HomePage>
 
   // ---------------- CONNECT ----------------
   Widget _connectTab() {
+    final tvIp = ipCtrl.text.trim();
+    final same = tvIp.isNotEmpty &&
+        phoneIp.contains('.') &&
+        LgTv.sameSubnet(tvIp, phoneIp);
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
       children: [
+        _card(children: [
+          Row(children: [
+            const Text('Network',
+                style: TextStyle(fontWeight: FontWeight.w800)),
+            const Spacer(),
+            Icon(Icons.wifi, color: Colors.white.withOpacity(0.4)),
+          ]),
+          const SizedBox(height: 10),
+          _netRow('Phone IP', phoneIp),
+          _netRow('Wi-Fi name', wifiName),
+          _netRow('TV IP',
+              tvIp.isEmpty ? '— enter below —' : tvIp),
+          _netRow('Same network',
+              tvIp.isEmpty
+                  ? '…'
+                  : (same ? 'Yes ✔' : 'No ✘'),
+              good: tvIp.isEmpty ? null : same),
+          TextButton.icon(
+            onPressed: _loadNet,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Re-read network'),
+          ),
+        ]),
+        const SizedBox(height: 12),
         _card(children: [
           const Text('1 — Same Wi-Fi',
               style: TextStyle(fontWeight: FontWeight.w800)),
@@ -301,7 +389,7 @@ class _HomePageState extends State<HomePage>
                 icon: const Icon(Icons.radar, size: 18),
                 label: Text(busy ? 'Scanning…' : 'Scan for TVs'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE5484D),
+                  backgroundColor: const Color(0xFF0A84FF),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -334,7 +422,7 @@ class _HomePageState extends State<HomePage>
                         Border.all(color: Colors.white.withOpacity(0.08)),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.tv, color: Color(0xFFF5B638)),
+                    const Icon(Icons.tv, color: Color(0xFFFF9F0A)),
                     const SizedBox(width: 12),
                     Expanded(
                         child: Column(
@@ -361,6 +449,7 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: 10),
           TextField(
             controller: ipCtrl,
+            onChanged: (_) => setState(() {}),
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
@@ -391,7 +480,7 @@ class _HomePageState extends State<HomePage>
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
-                side: const BorderSide(color: Color(0xFFE5484D)),
+                side: const BorderSide(color: Color(0xFF0A84FF)),
                 foregroundColor: Colors.white,
               ),
               child: const Text('Connect & Pair'),
@@ -407,6 +496,7 @@ class _HomePageState extends State<HomePage>
                 tv.disconnect();
                 setState(() {
                   connected = false;
+                  ptrOk = false;
                   status = 'Disconnected';
                 });
               },
@@ -423,6 +513,56 @@ class _HomePageState extends State<HomePage>
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
       children: [
+        _card(children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Touchpad',
+                  style: TextStyle(fontWeight: FontWeight.w800)),
+              Text(ptrOk ? 'pointer live ✔' : 'pointer off — arrows work',
+                  style: const TextStyle(
+                      color: Colors.white38, fontSize: 11)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text('Drag to move the cursor • tap to click',
+              style: TextStyle(color: Colors.white38, fontSize: 12)),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onPanUpdate: (d) {
+              if (!connected) return;
+              tv.pointerMove((d.delta.dx * 1.8).round(),
+                      (d.delta.dy * 1.8).round())
+                  .catchError((_) {});
+            },
+            onTap: () {
+              if (!connected) {
+                _snack('Connect to a TV first', err: true);
+                return;
+              }
+              if (tv.pointerReady) {
+                tv.pointerClick().catchError((_) {});
+              } else {
+                _run(() => tv.sendKey('ok'));
+              }
+            },
+            child: Container(
+              height: 132,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white.withOpacity(0.06),
+                border: Border.all(
+                    color: ptrOk
+                        ? const Color(0xFF0A84FF)
+                        : Colors.white.withOpacity(0.1)),
+              ),
+              alignment: Alignment.center,
+              child: const Text('Touchpad',
+                  style: TextStyle(color: Colors.white38, fontSize: 13)),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 12),
         _card(children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -445,14 +585,14 @@ class _HomePageState extends State<HomePage>
         const SizedBox(height: 12),
         _card(children: [
           Row(children: [
-            const Icon(Icons.volume_up_outlined, color: Color(0xFFF5B638)),
+            const Icon(Icons.volume_up_outlined, color: Color(0xFFFF9F0A)),
             const SizedBox(width: 8),
             const Text('Volume',
                 style: TextStyle(fontWeight: FontWeight.w800)),
             const Spacer(),
             Switch(
                 value: muted,
-                activeColor: const Color(0xFFE5484D),
+                activeColor: const Color(0xFF0A84FF),
                 onChanged: (v) {
                   setState(() => muted = v);
                   _run(() => tv.setMuted(v));
@@ -462,7 +602,7 @@ class _HomePageState extends State<HomePage>
             value: volume,
             min: 0,
             max: 100,
-            activeColor: const Color(0xFFE5484D),
+            activeColor: const Color(0xFF0A84FF),
             onChanged: (v) => setState(() => volume = v),
             onChangeEnd: (v) => _run(() => tv.setVolume(v.toInt())),
           ),
@@ -497,9 +637,44 @@ class _HomePageState extends State<HomePage>
                   () => _run(tv.youtube)),
               _appTile('Netflix', Icons.movie_outlined,
                   () => _run(tv.netflix)),
-              _appTile('Browser', Icons.language,
-                  () => _run(() => tv.openUrl('https://www.google.com'))),
+              _appTile('Live TV', Icons.tv_outlined,
+                  () => _run(tv.liveTv)),
             ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: appIdCtrl,
+            decoration: InputDecoration(
+              hintText: 'Other app ID — e.g. amazon',
+              prefixIcon: const Icon(Icons.apps_outlined),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.05),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                final v = appIdCtrl.text.trim();
+                if (v.isEmpty) {
+                  _snack('Enter an app ID first', err: true);
+                  return;
+                }
+                _run(() => tv.launchApp(v), 'Opening $v…');
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                side: const BorderSide(color: Color(0xFF0A84FF)),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Open app ID on TV'),
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -574,7 +749,7 @@ class _HomePageState extends State<HomePage>
               icon: const Icon(Icons.cast_connected),
               label: const Text('Play on TV'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE5484D),
+                backgroundColor: const Color(0xFF0A84FF),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -639,12 +814,29 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  Widget _netRow(String k, String v, {bool? good}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(children: [
+        Text(k, style: const TextStyle(color: Colors.white54, fontSize: 13)),
+        const Spacer(),
+        Text(v,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: good == null
+                    ? Colors.white
+                    : (good ? const Color(0xFF30D158) : const Color(0xFFFF453A)))),
+      ]),
+    );
+  }
+
   Widget _card({required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: const Color(0xFF121624).withOpacity(0.9),
+        color: const Color(0xFF1C1C1E).withOpacity(0.9),
         border: Border.all(color: Colors.white.withOpacity(0.08)),
         boxShadow: [
           BoxShadow(
@@ -753,7 +945,7 @@ class _HomePageState extends State<HomePage>
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
-                    colors: [Color(0xFFE5484D), Color(0xFF8E2B5E)],
+                    colors: [Color(0xFF0A84FF), Color(0xFF0040DD)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -782,9 +974,9 @@ class _Backdrop extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF0B0E17),
+              Color(0xFF000000),
               Color(0xFF101527),
-              Color(0xFF0B0E17),
+              Color(0xFF000000),
             ],
           ),
         ),
@@ -798,7 +990,7 @@ class _Backdrop extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(colors: [
-              const Color(0xFFE5484D).withOpacity(0.28),
+              const Color(0xFF0A84FF).withOpacity(0.28),
               Colors.transparent,
             ]),
           ),

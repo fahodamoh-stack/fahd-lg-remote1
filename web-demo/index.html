@@ -2,173 +2,296 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FAHD — LG Remote (تجربة ويب)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FAHD Remote — LG</title>
 <style>
+  :root {
+    --bg:#000000; --group:#1C1C1E; --group2:#2C2C2E; --sep:#38383A;
+    --blue:#0A84FF; --green:#30D158; --red:#FF453A; --gray:#98989F;
+    --ink:#FFFFFF; --ink2:rgba(255,255,255,.55);
+    --r:14px;
+  }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { font-family:Segoe UI, Tahoma, Arial, sans-serif; background:#0B0E17; color:#f4f1ea; min-height:100vh; }
-  body::before { content:""; position:fixed; top:-80px; left:-60px; width:280px; height:280px; border-radius:50%;
-    background:radial-gradient(circle, rgba(229,72,77,.28), transparent 70%); pointer-events:none; }
-  body::after { content:""; position:fixed; top:120px; right:-80px; width:260px; height:260px; border-radius:50%;
-    background:radial-gradient(circle, rgba(43,58,143,.35), transparent 70%); pointer-events:none; }
-  .wrap { max-width:520px; margin:0 auto; padding:18px 16px 40px; position:relative; z-index:1; }
-  .head { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
-  .logo { width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center;
-    font-size:24px; background:linear-gradient(135deg,#E5484D,#7C2D6B,#2B3A8F);
-    box-shadow:0 6px 18px rgba(229,72,77,.35); }
-  .head h1 { font-size:20px; letter-spacing:3px; font-weight:900; }
-  .head small { color:#ffffff8a; font-size:12px; }
-  .dot { margin-inline-start:auto; font-size:11px; font-weight:700; padding:7px 12px; border-radius:999px;
-    background:#1A2136; border:1px solid #ffffff1f; }
-  .dot.on { background:#123B2A; border-color:#2FD57F; color:#2FD57F; }
-  .status { background:#ffffff0d; border:1px solid #ffffff17; border-radius:14px;
-    padding:11px 14px; font-size:13px; color:#ffffffb3; margin-bottom:10px; }
-  .tabs { display:flex; gap:6px; margin-bottom:12px; }
-  .tabs button { flex:1; padding:11px; border-radius:12px; border:1px solid #ffffff17; background:#ffffff0a;
-    color:#fff; font-weight:700; cursor:pointer; font-size:14px; }
-  .tabs button.on { background:#E5484D; border-color:#E5484D; }
-  .card { background:#121624e6; border:1px solid #ffffff14; border-radius:20px; padding:16px;
-    margin-bottom:12px; box-shadow:0 10px 24px #00000066; }
-  .card h3 { font-size:15px; margin-bottom:6px; }
-  .card p { color:#ffffff8a; font-size:13px; line-height:1.7; margin-bottom:10px; }
-  input { width:100%; padding:12px; border-radius:12px; border:none; background:#ffffff0d; color:#fff;
-    font-size:14px; margin-bottom:10px; direction:ltr; text-align:left; }
-  .btn { width:100%; padding:13px; border-radius:14px; border:none; font-weight:800; font-size:14px;
-    cursor:pointer; margin-bottom:8px; }
-  .btn.red { background:#E5484D; color:#fff; }
-  .btn.white { background:#fff; color:#000; }
-  .btn.ghost { background:transparent; color:#fff; border:1px solid #E5484D; }
-  .row { display:flex; gap:8px; }
-  .pill { flex:1; padding:11px 4px; border-radius:12px; background:#ffffff0f; border:1px solid #ffffff14;
-    color:#fff; cursor:pointer; font-size:12px; }
-  .pill:active { background:#E5484D; }
-  .dpad { width:210px; height:210px; margin:6px auto; position:relative; }
-  .dpad button { position:absolute; width:60px; height:60px; border-radius:50%;
-    background:#ffffff0f; border:1px solid #ffffff1a; color:#fff; font-size:20px; cursor:pointer; }
-  .dpad .u { top:0; left:75px; } .dpad .d { bottom:0; left:75px; }
-  .dpad .l { left:0; top:75px; } .dpad .r { right:0; top:75px; }
-  .dpad .ok { left:66px; top:66px; width:78px; height:78px; font-weight:900; font-size:17px;
-    background:linear-gradient(135deg,#E5484D,#8E2B5E); border:none; }
+  body {
+    font-family:-apple-system, "SF Pro Text", "Segoe UI", Tahoma, Arial, sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:430px; margin:0 auto; padding:calc(14px + env(safe-area-inset-top)) 16px 48px; }
+  .eyebrow { font-size:12px; font-weight:700; letter-spacing:2px; color:var(--gray); }
+  h1 { font-size:30px; font-weight:800; letter-spacing:-.5px; margin:2px 0 4px; }
+  .conn { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700;
+    padding:6px 12px; border-radius:999px; background:var(--group); color:var(--gray); margin-bottom:12px; }
+  .conn i { width:8px; height:8px; border-radius:50%; background:var(--gray); }
+  .conn.on { color:var(--green); } .conn.on i { background:var(--green); }
+  /* iOS segmented */
+  .seg { display:flex; background:var(--group); border-radius:12px; padding:3px; margin-bottom:14px; position:relative; }
+  .seg button { flex:1; border:none; background:transparent; color:var(--ink); font-size:14px; font-weight:600;
+    font-family:inherit; padding:10px 4px; min-height:44px; border-radius:9px; cursor:pointer; z-index:1; }
+  .seg button.on { font-weight:700; }
+  .seg .thumb { position:absolute; top:3px; bottom:3px; border-radius:9px; background:var(--group2);
+    box-shadow:0 1px 4px rgba(0,0,0,.5); transition:inset-inline-start .25s ease, width .25s ease; z-index:0; }
+  /* grouped card */
+  .card { background:var(--group); border-radius:var(--r); margin-bottom:14px; overflow:hidden; }
+  .card > h3 { font-size:13px; font-weight:600; color:var(--gray); padding:12px 16px 6px; }
+  .row { display:flex; align-items:center; gap:10px; padding:12px 16px; min-height:52px;
+    border-top:1px solid var(--sep); font-size:15px; }
+  .row:first-of-type { border-top:none; }
+  .row .k { color:var(--ink2); flex:none; min-width:110px; font-size:14px; }
+  .row .v { flex:1; text-align:end; font-size:14px; direction:ltr; }
+  .row .v.ok { color:var(--green); font-weight:700; }
+  .row .v.bad { color:var(--red); font-weight:700; }
+  .chev { color:var(--gray); flex:none; }
+  .pad { padding:12px 16px; border-top:1px solid var(--sep); }
+  .pad:first-of-type { border-top:none; }
+  input[type=text] { width:100%; background:var(--group2); border:none; color:var(--ink);
+    border-radius:10px; padding:12px; font-size:15px; font-family:inherit; direction:ltr; text-align:left; }
+  input:focus-visible, button:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  .btn { width:100%; border:none; border-radius:12px; font-family:inherit; font-size:16px; font-weight:700;
+    padding:13px; min-height:48px; cursor:pointer; margin-top:10px; }
+  .btn.blue { background:var(--blue); color:#fff; }
+  .btn.red { background:transparent; color:var(--red); }
+  .btn:active { opacity:.6; }
+  .foot { font-size:12px; color:var(--gray); line-height:1.8; padding:0 16px 12px; }
+  /* touchpad — Siri Remote style */
+  .touchpad { margin:12px 16px; height:132px; border-radius:16px; background:var(--group2);
+    border:1px solid var(--sep); display:flex; align-items:center; justify-content:center;
+    color:var(--gray); font-size:13px; touch-action:none; cursor:pointer; user-select:none; }
+  .touchpad.live { border-color:var(--blue); }
+  .ctl { display:flex; align-items:center; gap:12px; padding:12px 16px; border-top:1px solid var(--sep); }
+  .ctl .k { flex:1; font-size:15px; }
+  /* iOS switch */
+  .sw { position:relative; width:51px; height:31px; flex:none; }
+  .sw input { position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; }
+  .sw span { position:absolute; inset:0; border-radius:999px; background:var(--group2); transition:.2s; pointer-events:none; }
+  .sw span::after { content:""; position:absolute; top:2px; inset-inline-start:2px; width:27px; height:27px;
+    border-radius:50%; background:#fff; transition:.2s; box-shadow:0 2px 5px rgba(0,0,0,.4); }
+  .sw input:checked + span { background:var(--green); }
+  .sw input:checked + span::after { transform:translateX(-20px); }
+  [dir="ltr"] .sw input:checked + span::after { transform:translateX(20px); }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:28px; background:transparent; }
+  input[type=range]::-webkit-slider-runnable-track { height:6px; border-radius:3px; background:var(--group2); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:28px; height:28px; border-radius:50%;
+    background:#fff; margin-top:-11px; box-shadow:0 1px 4px rgba(0,0,0,.5); }
+  /* round buttons */
+  .rounds { display:flex; justify-content:space-around; padding:14px 16px; border-top:1px solid var(--sep); }
+  .rbtn { width:60px; min-height:60px; border-radius:50%; border:none; background:var(--group2); color:var(--ink);
+    font-size:19px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .rbtn small { font-size:9px; color:var(--gray); }
+  .rbtn:active { background:var(--blue); }
+  /* apps squircle grid */
+  .apps { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:14px 16px; }
+  .app { border:none; background:transparent; cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; gap:6px; font-family:inherit; min-height:44px; }
+  .app .ic { width:58px; height:58px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:22px; color:#fff; }
+  .app small { font-size:11px; color:var(--ink); }
+  .app:active .ic { opacity:.6; }
+  .ic.yt { background:#FF0000; } .ic.nf { background:#000; border:1px solid var(--sep); color:#E50914; }
+  .ic.tv { background:var(--blue); } .ic.prime { background:#00A8E1; } .ic.plus { background:var(--group2); color:var(--blue); }
   .hidden { display:none; }
-  .note { font-size:12px; color:#ffffff63; line-height:1.8; }
+  .statusline { padding:10px 16px; font-size:13px; color:var(--ink2); border-top:1px solid var(--sep); min-height:40px; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="head">
-    <div class="logo">📺</div>
-    <div><h1>FAHD</h1><small>LG webOS remote • نسخة تجربة</small></div>
-    <div class="dot" id="dot">OFFLINE</div>
-  </div>
-  <div class="status" id="status">مش متوصل — الموبايل والتلفزيون لازم نفس الواي فاي</div>
-  <div class="tabs">
-    <button id="t0" class="on" onclick="tab(0)">الاتصال</button>
-    <button id="t1" onclick="tab(1)">الريموت</button>
-    <button id="t2" onclick="tab(2)">الكاست</button>
+  <div class="eyebrow">FAHD</div>
+  <h1>التحكم في التلفزيون</h1>
+  <div class="conn" id="dot"><i></i><span id="dotTx">غير متصل</span></div>
+
+  <div class="seg" id="seg">
+    <div class="thumb" id="thumb"></div>
+    <button class="on" onclick="tab(0)">الشبكة</button>
+    <button onclick="tab(1)">الريموت</button>
+    <button onclick="tab(2)">التطبيقات</button>
   </div>
 
+  <!-- NETWORK -->
   <div id="p0">
     <div class="card">
-      <h3>1 — نفس الواي فاي</h3>
-      <p>المتصفح ميقدرش يدور تلقائيا (SSDP)، فهات IP التلفزيون يدوي: من التلفزيون Settings ← Network ← Wi-Fi Connection.</p>
-      <input id="ip" placeholder="192.168.1.50">
-      <button class="btn red" onclick="connect()">اتصال و Pairing</button>
-      <button class="btn ghost" onclick="disconnect()">قطع الاتصال</button>
-      <div class="note">أول مرة التلفزيون هيعرض "Allow؟" — دوس Allow. المفتاح بيتحفظ في المتصفح.</div>
+      <h3>الهاتف</h3>
+      <div class="row"><span class="k">IP الهاتف</span><span class="v" id="myIp">…</span></div>
+      <div class="row"><span class="k">نوع الاتصال</span><span class="v" id="connType">…</span></div>
+      <div class="foot">المتصفح يمنع قراءة اسم الواي فاي — الاسم يظهر في تطبيق الموبايل (يطلب صلاحية الموقع مرة واحدة).</div>
+    </div>
+    <div class="card">
+      <h3>التلفزيون</h3>
+      <div class="pad"><input type="text" id="ip" inputmode="decimal" placeholder="192.168.1.50"></div>
+      <div class="row"><span class="k">نفس الشبكة؟</span><span class="v" id="sameNet">اكتب الـ IP</span></div>
+      <div class="pad">
+        <button class="btn blue" onclick="connect()">اتصال و Pairing</button>
+        <button class="btn red" onclick="disconnect()">قطع الاتصال</button>
+      </div>
+      <div class="foot">لازم الموبايل والتلفزيون على نفس الواي فاي. أول مرة اقبل Allow على شاشة التلفزيون — المفتاح بيتحفظ.</div>
+      <div class="statusline" id="status">جاهز</div>
     </div>
   </div>
 
+  <!-- REMOTE -->
   <div id="p1" class="hidden">
     <div class="card">
-      <h3>الأسهم</h3>
-      <div class="dpad">
-        <button class="u" onclick="key('up')">▲</button>
-        <button class="d" onclick="key('down')">▼</button>
-        <button class="l" onclick="key('left')">◀</button>
-        <button class="r" onclick="key('right')">▶</button>
-        <button class="ok" onclick="key('ok')">OK</button>
+      <h3>لوحة اللمس — اسحب للتحريك، اضغط للنقر</h3>
+      <div class="touchpad" id="pad">Touchpad</div>
+      <div class="foot" id="padState">المؤشر غير متصل</div>
+      <div class="rounds">
+        <button class="rbtn" onclick="key('up')">▲<small>فوق</small></button>
+        <button class="rbtn" onclick="key('ok')">●<small>OK</small></button>
+        <button class="rbtn" onclick="key('down')">▼<small>تحت</small></button>
       </div>
-      <div class="row">
-        <button class="pill" onclick="cmd('ssap://com.webos.applicationManager/launch',{id:'com.webos.app.home'})">Home</button>
-        <button class="pill" onclick="cmd('ssap://com.webos.service.ime/sendEnterKey',{})">Back</button>
-        <button class="pill" onclick="cmd('ssap://audio/volumeUp',{})">Vol +</button>
-        <button class="pill" onclick="cmd('ssap://audio/volumeDown',{})">Vol −</button>
-      </div><br>
-      <div class="row">
-        <button class="pill" onclick="cmd('ssap://audio/setMuted',{muted:true})">كتم</button>
-        <button class="pill" onclick="cmd('ssap://tv/channelUp',{})">قناة +</button>
-        <button class="pill" onclick="cmd('ssap://tv/channelDown',{})">قناة −</button>
-        <button class="pill" onclick="cmd('ssap://com.webos.app.livetv'.replace('com.webos.app.livetv','com.webos.applicationManager/launch'),{id:'com.webos.app.livetv'})">مباشر</button>
+      <div class="rounds" style="border-top:none;padding-top:0">
+        <button class="rbtn" onclick="key('left')">◀<small>شمال</small></button>
+        <button class="rbtn" onclick="cmd('ssap://com.webos.applicationManager/launch',{id:'com.webos.app.home'})">⌂<small>Home</small></button>
+        <button class="rbtn" onclick="key('right')">▶<small>يمين</small></button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>الصوت والقنوات</h3>
+      <div class="pad"><input type="range" id="vol" min="0" max="100" value="20" onchange="cmd('ssap://audio/setVolume',{volume:+this.value})"></div>
+      <div class="ctl"><span class="k">كتم الصوت</span>
+        <label class="sw"><input type="checkbox" id="mute" onchange="cmd('ssap://audio/setMuted',{muted:this.checked})"><span></span></label>
+      </div>
+      <div class="rounds">
+        <button class="rbtn" onclick="cmd('ssap://audio/volumeDown',{})">−<small>صوت</small></button>
+        <button class="rbtn" onclick="cmd('ssap://audio/volumeUp',{})">+<small>صوت</small></button>
+        <button class="rbtn" onclick="cmd('ssap://tv/channelDown',{})">−<small>قناة</small></button>
+        <button class="rbtn" onclick="cmd('ssap://tv/channelUp',{})">+<small>قناة</small></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPS -->
+  <div id="p2" class="hidden">
+    <div class="card">
+      <h3>التطبيقات</h3>
+      <div class="apps">
+        <button class="app" onclick="launch('youtube.leanback.v4')"><span class="ic yt"><svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span><small>YouTube</small></button>
+        <button class="app" onclick="launch('netflix')"><span class="ic nf">N</span><small>Netflix</small></button>
+        <button class="app" onclick="launch('com.webos.app.livetv')"><span class="ic tv"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M8 3h8"/></svg></span><small>مباشر</small></button>
+        <button class="app" onclick="document.getElementById('customApp').focus()"><span class="ic plus">+</span><small>تطبيق آخر</small></button>
+      </div>
+      <div class="pad"><input type="text" id="customApp" placeholder="App ID — مثال: amazon"></div>
+      <div class="pad" style="border-top:none;padding-top:0"><button class="btn blue" onclick="launch(document.getElementById('customApp').value.trim())">فتح التطبيق</button></div>
+    </div>
+    <div class="card">
+      <h3>تشغيل من رابط</h3>
+      <div class="pad"><input type="text" id="yt" placeholder="YouTube link"></div>
+      <div class="pad" style="border-top:none;padding-top:0"><button class="btn blue" onclick="openYT()">تشغيل يوتيوب</button></div>
+      <div class="pad"><input type="text" id="url" placeholder="https://.../video.mp4"></div>
+      <div class="pad" style="border-top:none;padding-top:0"><button class="btn blue" onclick="cmd('ssap://com.webos.applicationManager/open',{target:document.getElementById('url').value.trim()})">فتح الرابط</button></div>
+      <div class="rounds">
+        <button class="rbtn" onclick="cmd('ssap://media.controls/play',{})">▶<small>تشغيل</small></button>
+        <button class="rbtn" onclick="cmd('ssap://media.controls/pause',{})">⏸<small>إيقاف</small></button>
+        <button class="rbtn" onclick="cmd('ssap://media.controls/stop',{})">⏹<small>إنهاء</small></button>
       </div>
     </div>
     <div class="card">
       <h3>رسالة على الشاشة</h3>
-      <input id="toast" placeholder="اكتب رسالة...">
-      <button class="btn white" onclick="cmd('ssap://system.notifications/createToast',{message:document.getElementById('toast').value||'FAHD'})">عرض على التلفزيون</button>
-    </div>
-  </div>
-
-  <div id="p2" class="hidden">
-    <div class="card">
-      <h3>يوتيوب</h3>
-      <p>الصق لينك يوتيوب وهيفتح على التلفزيون فورا.</p>
-      <input id="yt" placeholder="https://youtube.com/watch?v=...">
-      <button class="btn red" onclick="openYT()">تشغيل على التلفزيون</button>
-    </div>
-    <div class="card">
-      <h3>لينك مباشر</h3>
-      <p>أي لينك mp4 / صورة / صفحة على نفس الشبكة.</p>
-      <input id="url" placeholder="https://.../video.mp4">
-      <button class="btn ghost" onclick="cmd('ssap://com.webos.applicationManager/open',{target:document.getElementById('url').value})">فتح على التلفزيون</button><br><br>
-      <div class="row">
-        <button class="pill" onclick="cmd('ssap://media.controls/play',{})">تشغيل</button>
-        <button class="pill" onclick="cmd('ssap://media.controls/pause',{})">إيقاف</button>
-        <button class="pill" onclick="cmd('ssap://media.controls/stop',{})">إنهاء</button>
-      </div>
+      <div class="pad"><input type="text" id="toast" style="direction:rtl;text-align:right" placeholder="اكتب رسالة..."></div>
+      <div class="pad" style="border-top:none;padding-top:0"><button class="btn blue" onclick="cmd('ssap://system.notifications/createToast',{message:document.getElementById('toast').value||'FAHD'})">عرض</button></div>
     </div>
   </div>
 </div>
 
 <script>
-let ws=null, id=0, pending={}, connected=false, myIp='';
-function setStatus(s){ document.getElementById('status').textContent=s; }
-function setDot(on){ const d=document.getElementById('dot'); d.textContent=on?'LIVE':'OFFLINE'; d.classList.toggle('on',on); }
-function tab(n){ [0,1,2].forEach(i=>{ document.getElementById('p'+i).classList.toggle('hidden',i!==n); document.getElementById('t'+i).classList.toggle('on',i===n); }); }
+let ws=null, ptr=null, id=0, pending={}, connected=false, ptrReady=false;
+function $(x){ return document.getElementById(x); }
+function setStatus(s){ $('status').textContent=s; }
+function setDot(on){ $('dot').classList.toggle('on',on); $('dotTx').textContent=on?'متصل':'غير متصل'; }
+function tab(n){
+  [0,1,2].forEach(i=>$('p'+i).classList.toggle('hidden',i!==n));
+  const btns=document.querySelectorAll('#seg button');
+  btns.forEach((b,i)=>b.classList.toggle('on',i===n));
+  const th=$('thumb'), b=btns[n];
+  th.style.width=b.offsetWidth+'px';
+  const rtl=document.documentElement.dir==='rtl';
+  th.style.insetInlineStart=(rtl? (segWidth()-b.offsetLeft-b.offsetWidth) : b.offsetLeft)+'px';
+}
+function segWidth(){ return document.getElementById('seg').offsetWidth-6; }
+window.addEventListener('resize',()=>tab(cur)); let cur=0;
+const _tab=tab; tab=function(n){cur=n;_tab(n);};
+// phone IP via WebRTC (best effort)
+(function(){
+  $('connType').textContent=(navigator.connection&&navigator.connection.effectiveType)||'غير معروف';
+  try{
+    const pc=new RTCPeerConnection({iceServers:[]});
+    pc.createDataChannel('x'); pc.createOffer().then(o=>pc.setLocalDescription(o));
+    pc.onicecandidate=(e)=>{
+      if(e.candidate){ const m=/([0-9]{1,3}\.){3}[0-9]{1,3}/.exec(e.candidate.candidate);
+        if(m){ $('myIp').textContent=m[0]; checkNet(); pc.close(); } }
+    };
+    setTimeout(()=>{ if($('myIp').textContent==='…') $('myIp').textContent='غير متاح'; },5000);
+  }catch(e){ $('myIp').textContent='غير متاح'; }
+})();
+$('ip').addEventListener('input',checkNet);
+function checkNet(){
+  const t=$('ip').value.trim(), m=$('myIp').textContent;
+  const el=$('sameNet');
+  if(!/^\d+\.\d+\.\d+\.\d+$/.test(t)){ el.textContent='اكتب الـ IP'; el.className='v'; return; }
+  if(!/^\d+\.\d+\.\d+\.\d+$/.test(m)){ el.textContent=t; el.className='v'; return; }
+  const same=t.split('.').slice(0,3).join('.')===m.split('.').slice(0,3).join('.');
+  el.textContent=same?'نفس الشبكة ✔':'شبكة مختلفة ✘'; el.className='v '+(same?'ok':'bad');
+}
+// ---- webOS protocol ----
 function connect(){
-  const ip=document.getElementById('ip').value.trim();
+  const ip=$('ip').value.trim();
   if(!ip){ setStatus('اكتب IP التلفزيون الأول'); return; }
-  myIp=ip; disconnect(true);
-  setStatus('بتصل بـ '+ip+' — اقبل Allow على شاشة التلفزيون...');
-  try{ ws=new WebSocket('ws://'+ip+':3000'); }catch(e){ setStatus('فشل الاتصال: '+e); return; }
+  disconnect(true); setStatus('بتصل... اقبل Allow على التلفزيون');
+  try{ ws=new WebSocket('ws://'+ip+':3000'); }catch(e){ setStatus('فشل الاتصال'); return; }
   const key=localStorage.getItem('lg_client_key');
-  ws.onopen=()=>{ ws.send(JSON.stringify({type:'register',id:'register_0',payload:Object.assign(
+  ws.onopen=()=>ws.send(JSON.stringify({type:'register',id:'register_0',payload:Object.assign(
     {forcePairing:false,pairingType:'PROMPT',manifest:{manifestVersion:1,appVersion:'1.1',
     signedAppId:'com.example.fahd',appId:'com.example.fahd',vendorId:'1',
     permissions:['LAUNCH','LAUNCH_WEBAPP','CLOSE','CONTROL_AUDIO','CONTROL_DISPLAY','CONTROL_INPUT_TV',
     'CONTROL_POWER','CONTROL_NOTIFICATIONS','READ_RUNNING_APPS','READ_TV_CHANNEL_LIST',
-    'WRITE_NOTIFICATION_TOAST','READ_POWER_STATE']}}, key?{'client-key':key}:{})})); };
+    'WRITE_NOTIFICATION_TOAST','READ_POWER_STATE']}},key?{'client-key':key}:{})}));
   ws.onmessage=(ev)=>{ let m; try{m=JSON.parse(ev.data);}catch(e){return;}
     if(m.type==='registered'){ const k=m.payload&&m.payload['client-key'];
       if(k) localStorage.setItem('lg_client_key',k);
-      connected=true; setDot(true); setStatus('متصل بـ '+ip+' ✔'); tab(1); return; }
+      connected=true; setDot(true); setStatus('متصل ✔'); openPointer(ip); tab(1); return; }
     if(m.id&&pending[m.id]){ pending[m.id](m); delete pending[m.id]; } };
-  ws.onerror=()=>setStatus('خطأ اتصال — تأكد إنك نفس الواي فاي وإن الـ IP صح');
-  ws.onclose=()=>{ if(connected){connected=false;setDot(false);setStatus('انقطع الاتصال');} };
-  setTimeout(()=>{ if(!connected&&ws&&ws.readyState===1) setStatus('مستني Allow على التلفزيون... دوس Allow على الشاشة'); },4000);
+  ws.onerror=()=>setStatus('خطأ — نفس الواي فاي؟ الـ IP صح؟');
+  ws.onclose=()=>{ connected=false; ptrReady=false; setDot(false); setStatus('انقطع الاتصال'); $('padState').textContent='المؤشر غير متصل'; };
 }
-function disconnect(silent){ try{ws&&ws.close();}catch(e){} ws=null; connected=false; setDot(false); if(!silent) setStatus('انقطع الاتصال'); }
+function disconnect(silent){ try{ws&&ws.close();}catch(e){} try{ptr&&ptr.close();}catch(e){}
+  ws=null; ptr=null; connected=false; ptrReady=false; setDot(false); if(!silent) setStatus('انقطع الاتصال'); }
 function cmd(uri,payload){
   return new Promise((res,rej)=>{
-    if(!connected||!ws){ setStatus('اتصل بالتلفزيون الأول'); return rej('offline'); }
+    if(!connected||!ws){ setStatus('اتصل الأول'); return rej('offline'); }
     id++; const my='req_'+id; pending[my]=res;
     ws.send(JSON.stringify({id:my,type:'request',uri:uri,payload:payload||{}}));
     setTimeout(()=>{ if(pending[my]){delete pending[my]; rej('timeout');} },8000);
-  }).catch(e=>setStatus('التلفزيون مردش: '+e));
+  }).catch(e=>setStatus('التلفزيون مردش ('+e+')'));
 }
 function key(k){ cmd('ssap://com.webos.service.api/input',{key:k}); }
-function openYT(){ const v=document.getElementById('yt').value.trim();
-  if(!v) return cmd('ssap://com.webos.applicationManager/launch',{id:'youtube.leanback.v4'});
-  cmd('ssap://com.webos.applicationManager/launch',{id:'youtube.leanback.v4',contentTarget:v}); }
+function launch(appId,params){ if(!appId){ setStatus('اكتب App ID'); return; }
+  cmd('ssap://com.webos.applicationManager/launch',Object.assign({id:appId},params||{})); }
+function openYT(){ const v=$('yt').value.trim();
+  if(!v) return launch('youtube.leanback.v4');
+  launch('youtube.leanback.v4',{contentTarget:v}); }
+// ---- pointer / touchpad ----
+function openPointer(ip){
+  cmd('ssap://com.webos.service.networkinput/getPointerInputSocket',{}).then(m=>{
+    const p=m&&m.payload&&m.payload.socketPath;
+    if(!p){ $('padState').textContent='التلفزيون لا يدعم المؤشر — استخدم الأسهم'; return; }
+    try{ ptr=new WebSocket('ws://'+ip+':3000'+p); }catch(e){ return; }
+    ptr.onopen=()=>{ ptrReady=true; $('pad').classList.add('live'); $('padState').textContent='المؤشر شغال ✔'; };
+    ptr.onclose=()=>{ ptrReady=false; };
+  }).catch(()=>{});
+}
+(function(){
+  const pad=$('pad'); let lx=0, ly=0, sx=0, sy=0, t0=0, moved=0, raf=null, dx=0, dy=0;
+  function flush(){ if(ptrReady&&ptr&&(dx||dy)){ try{ptr.send('type:move\ndx:'+Math.round(dx)+'\ndy:'+Math.round(dy)+'\n');}catch(e){} dx=0; dy=0; } raf=null; }
+  pad.addEventListener('pointerdown',e=>{ pad.setPointerCapture(e.pointerId);
+    lx=sx=e.clientX; ly=sy=e.clientY; t0=Date.now(); moved=0; });
+  pad.addEventListener('pointermove',e=>{ if(e.buttons===0&&e.pointerType==='mouse') return;
+    dx+=(e.clientX-lx)*1.6; dy+=(e.clientY-ly)*1.6; lx=e.clientX; ly=e.clientY;
+    moved+=Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy); sx=e.clientX; sy=e.clientY;
+    if(!raf) raf=requestAnimationFrame(flush); });
+  pad.addEventListener('pointerup',e=>{ if(raf){cancelAnimationFrame(raf);raf=null;flush();}
+    if(Date.now()-t0<300&&moved<24){ if(ptrReady&&ptr){try{ptr.send('type:click\n');}catch(x){}} else key('ok'); } });
+})();
+tab(0);
 </script>
 </body>
 </html>

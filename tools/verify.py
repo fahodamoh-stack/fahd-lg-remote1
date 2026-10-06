@@ -24,6 +24,8 @@ def check(name, cond, extra=""):
 # 1. files exist
 for p in [LG, MAIN, TEST, PUB]:
     check(f"exists {p.name}", p.exists())
+check("exists home_widget_test", (ROOT / "test" / "home_widget_test.dart").exists())
+check("exists web-demo", (ROOT / "web-demo" / "index.html").exists())
 
 src = LG.read_text(encoding="utf-8")
 main = MAIN.read_text(encoding="utf-8")
@@ -36,10 +38,15 @@ for label, text in [("lg_tv.dart", src), ("main.dart", main)]:
 
 # 3. required APIs present
 for api in ["buildRegisterPayload", "buildRequest", "parseSsdpResponse",
-            "clampVolume", "discover", "connect",
+            "clampVolume", "sameSubnet", "pointerMoveMsg", "pointerClickMsg",
+            "pointerButtonMsg", "appIds", "discover", "connect",
+            "connectPointer", "pointerMove", "pointerClick", "closePointer",
             "volumeUp", "setVolume", "sendKey", "toast",
             "openUrl", "launchApp", "youtube", "powerOff"]:
     check(f"lg_tv.dart has {api}", api in src)
+for s in ["CupertinoSlidingSegmentedControl", "Touchpad", "NetworkInfo",
+          "Permission.locationWhenInUse", "onPanUpdate", "appIdCtrl"]:
+    check(f"main.dart has {s}", s in main)
 
 # 4. protocol logic mirror (same rules as Dart)
 def build_register(saved=None):
@@ -83,7 +90,8 @@ check("volume clamp", max(0, min(100, -5)) == 0 and max(0, min(100, 130)) == 100
 
 # 5. pubspec deps
 pub = PUB.read_text(encoding="utf-8")
-for d in ["web_socket_channel", "shared_preferences", "flutter_test"]:
+for d in ["web_socket_channel", "shared_preferences", "flutter_test",
+          "network_info_plus", "permission_handler"]:
     check(f"pubspec has {d}", d in pub)
 
 print()

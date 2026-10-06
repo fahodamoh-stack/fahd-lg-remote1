@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Pairing is a one-time TV prompt. Key is saved locally.
 class LgTv {
   WebSocketChannel? _ch;
+  WebSocketChannel? _ptr;
   StreamSubscription? _sub;
   int _id = 0;
   final Map<String, Completer<Map<String, dynamic>>> _pending = {};
@@ -98,6 +99,33 @@ class LgTv {
   }
 
   static int clampVolume(int v) => v.clamp(0, 100);
+
+  /// Same local network? Compares first 3 octets (e.g. 192.168.1.x).
+  static bool sameSubnet(String a, String b) {
+    List<String> pa = a.trim().split('.'), pb = b.trim().split('.');
+    if (pa.length != 4 || pb.length != 4) return false;
+    for (final p in [...pa, ...pb]) {
+      final n = int.tryParse(p);
+      if (n == null || n < 0 || n > 255) return false;
+    }
+    return pa.sublist(0, 3).join('.') == pb.sublist(0, 3).join('.');
+  }
+
+  // ---------- Pointer (Magic-remote cursor) message builders ----------
+  // Sent over the pointer socket as plain text lines.
+  static String pointerMoveMsg(int dx, int dy) =>
+      'type:move\ndx:$dx\ndy:$dy\n';
+  static String pointerClickMsg() => 'type:click\n';
+  static String pointerScrollMsg(int dx, int dy) =>
+      'type:scroll\ndx:$dx\ndy:$dy\n';
+  static String pointerButtonMsg(String name) => 'type:button\nname:$name\n';
+
+  /// Known webOS app IDs. Anything else can be launched via custom ID.
+  static const Map<String, String> appIds = {
+    'YouTube': 'youtube.leanback.v4',
+    'Netflix': 'netflix',
+    'Live TV': 'com.webos.app.livetv',
+  };
 
   // ---------- Discovery (SSDP) ----------
   // Returns list of {ip, name, location}
@@ -213,6 +241,7 @@ class LgTv {
     try {
       _ch?.sink.close();
     } catch (_) {}
+    closePointer();
     _sub = null;
     _ch = null;
     for (final c in _pending.values) {
@@ -296,6 +325,40 @@ class LgTv {
   Future<void> stop() => _req('ssap://media.controls/stop').then((_) {});
 
   Future<void> powerOff() => _req('ssap://system/turnOff').then((_) {});
+
+  // ---------- Pointer (touchpad cursor) ----------
+  // Opens the TV's pointer input socket. Throws when the TV refuses
+  // (older models) — callers should fall back to arrow keys.
+  Future<void> connectPointer() async {
+    if (_ch == null || ip == null) throw StateError('Not connected');
+    closePointer();
+    final res = await _req(
+        'ssap://com.webos.service.networkinput/getPointerInputSocket');
+    final path = res['payload']?['socketPath']?.toString() ?? '';
+    if (path.isEmpty) throw StateError('Pointer not supported by this TV');
+    _ptr = WebSocketChannel.connect(Uri.parse('ws://$ip:3000$path'));
+  }
+
+  void _ptrSend(String msg) {
+    final p = _ptr;
+    if (p == null) throw StateError('Pointer not connected');
+    p.sink.add(msg);
+  }
+
+  Future<void> pointerMove(int dx, int dy) async =>
+      _ptrSend(pointerMoveMsg(dx, dy));
+  Future<void> pointerClick() async => _ptrSend(pointerClickMsg());
+  Future<void> pointerScroll(int dx, int dy) async =>
+      _ptrSend(pointerScrollMsg(dx, dy));
+
+  void closePointer() {
+    try {
+      _ptr?.sink.close();
+    } catch (_) {}
+    _ptr = null;
+  }
+
+  bool get pointerReady => _ptr != null;
 
   void dispose() {
     disconnect();

@@ -15,9 +15,12 @@ void main() {
       expect(find.textContaining('Not connected'), findsOneWidget);
     });
 
-    testWidgets('connect tab: scan + manual IP', (t) async {
+    testWidgets('connect tab: network card + scan + manual IP', (t) async {
       await t.pumpWidget(const LgRemoteApp());
       await t.pumpAndSettle();
+      expect(find.text('Network'), findsOneWidget);
+      expect(find.text('Phone IP'), findsOneWidget);
+      expect(find.text('Wi-Fi name'), findsOneWidget);
       expect(find.text('Scan for TVs'), findsOneWidget);
       expect(find.text('Found TVs'), findsOneWidget);
       expect(find.widgetWithText(TextField, '192.168.1.50'),
@@ -30,10 +33,12 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.text('Remote'));
       await t.pumpAndSettle();
+      expect(find.text('Touchpad'), findsWidgets);
       expect(find.text('Direction pad'), findsOneWidget);
       expect(find.text('OK'), findsOneWidget);
       expect(find.text('Volume'), findsOneWidget);
       expect(find.text('Apps'), findsOneWidget);
+      expect(find.text('Netflix'), findsOneWidget);
     });
 
     testWidgets('can switch to Cast tab', (t) async {
