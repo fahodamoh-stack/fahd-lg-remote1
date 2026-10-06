@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'lg_tv.dart';
 import 'services/sound_service.dart';
 
@@ -71,6 +72,48 @@ class _HomePageState extends State<HomePage> {
     SoundService.instance.init().then((_) {
       if (mounted) setState(() => soundOn = SoundService.instance.enabled);
     });
+    _restoreSession();
+  }
+
+  /// Remember the TV: prefill last IP, and auto-reconnect silently when
+  /// we already have a pairing key for it.
+  Future<void> _restoreSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ip = (prefs.getString('fa_last_ip') ?? '').trim();
+      if (ip.isEmpty || !mounted) return;
+      setState(() => ipCtrl.text = ip);
+      final hasKey = (prefs.getString('lg_client_key_$ip') ??
+              prefs.getString('lg_client_key') ??
+              '')
+          .isNotEmpty;
+      if (hasKey) {
+        await connectTo(ip, quiet: true);
+      } else {
+        setState(() => status = 'Welcome back — tap Connect & Pair');
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _forgetTv() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys().where((k) =>
+          k == 'fa_last_ip' ||
+          k == 'lg_client_key' ||
+          k.startsWith('lg_client_key_'));
+      for (final k in keys) {
+        await prefs.remove(k);
+      }
+    } catch (_) {}
+    tv.disconnect();
+    setState(() {
+      connected = false;
+      ptrOk = false;
+      ipCtrl.clear();
+      status = 'Forgotten — enter TV IP to pair again';
+    });
+    _snack('Saved TV forgotten');
   }
 
   /// Read connected-network info (IP always; SSID needs location
@@ -161,13 +204,19 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> connectTo(String ip) async {
+  Future<void> connectTo(String ip, {bool quiet = false}) async {
     setState(() {
       busy = true;
-      status = 'Pairing with $ip — accept prompt on TV…';
+      status = quiet
+          ? 'Reconnecting to $ip…'
+          : 'Pairing with $ip — accept prompt on TV…';
     });
     try {
       await tv.connect(ip.trim());
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fa_last_ip', ip.trim());
+      } catch (_) {}
       setState(() {
         connected = true;
         status = 'Connected to $ip';
@@ -181,10 +230,10 @@ class _HomePageState extends State<HomePage> {
       }
       _loadNet();
       SoundService.instance.success();
-      _snack('Connected — pairing saved');
+      if (!quiet) _snack('Connected — pairing saved');
     } catch (e) {
       setState(() => status = _cleanErr(e));
-      _snack(_cleanErr(e), err: true);
+      if (!quiet) _snack(_cleanErr(e), err: true);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -529,6 +578,13 @@ class _HomePageState extends State<HomePage> {
               icon: const Icon(Icons.link_off, size: 16),
               label: const Text('Disconnect'),
             ),
+          TextButton.icon(
+            onPressed: _forgetTv,
+            icon: const Icon(Icons.delete_outline,
+                size: 16, color: Color(0xFFFF453A)),
+            label: const Text('Forget saved TV',
+                style: TextStyle(color: Color(0xFFFF453A))),
+          ),
         ]),
       ],
     );

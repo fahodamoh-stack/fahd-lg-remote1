@@ -95,6 +95,10 @@ for d in ["web_socket_channel", "shared_preferences", "flutter_test",
     check(f"pubspec has {d}", d in pub)
 check("sound service exists",
       (ROOT / "lib" / "services" / "sound_service.dart").exists())
+check("remembers IP (app)", "fa_last_ip" in src or "fa_last_ip" in main)
+check("remembers IP (demo)",
+      "fa_last_ip" in (ROOT / "web-demo" / "index.html").read_text(encoding="utf-8"))
+check("forget TV option", "Forget saved TV" in main)
 check("main uses SoundService", "SoundService" in main)
 check("assets declared", "assets/sounds/" in pub)
 

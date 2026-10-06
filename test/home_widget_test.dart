@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fahd_lg_remote/main.dart';
 
 void main() {
@@ -49,6 +50,19 @@ void main() {
       expect(find.text('Cast YouTube'), findsOneWidget);
       expect(find.text('Play on TV'), findsOneWidget);
       expect(find.text('Open on TV'), findsOneWidget);
+    });
+
+    testWidgets('remembers last TV IP across restarts', (t) async {
+      SharedPreferences.setMockInitialValues(
+          {'fa_last_ip': '192.168.1.50'});
+      await t.pumpWidget(const LgRemoteApp());
+      await t.pumpAndSettle();
+      final fields =
+          t.widgetList<TextField>(find.byType(TextField));
+      expect(
+          fields.any((f) => f.controller?.text == '192.168.1.50'),
+          true);
+      expect(find.text('Forget saved TV'), findsOneWidget);
     });
   });
 }

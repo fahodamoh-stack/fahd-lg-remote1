@@ -273,6 +273,7 @@ function connect(){
   ws.onmessage=(ev)=>{ let m; try{m=JSON.parse(ev.data);}catch(e){return;}
     if(m.type==='registered'){ const k=m.payload&&m.payload['client-key'];
       if(k) localStorage.setItem('lg_client_key',k);
+      try{ localStorage.setItem('fa_last_ip',ip); }catch(e){}
       connected=true; setDot(true); setStatus('متصل ✔'); sfx.success(); openPointer(ip); tab(1); return; }
     if(m.id&&pending[m.id]){ pending[m.id](m); delete pending[m.id]; } };
   ws.onerror=()=>{ sfx.error(); setStatus('خطأ — نفس الواي فاي؟ الـ IP صح؟'); };
@@ -317,6 +318,11 @@ function openPointer(ip){
     if(Date.now()-t0<300&&moved<24){ if(ptrReady&&ptr){try{ptr.send('type:click\n');}catch(x){}} else key('ok'); } });
 })();
 tab(0);
+// remember last TV IP
+(function(){
+  const last=localStorage.getItem('fa_last_ip')||'';
+  if(last){ $('ip').value=last; checkNet(); setStatus('Welcome back — tap connect'); }
+})();
 </script>
 </body>
 </html>
