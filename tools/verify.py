@@ -26,6 +26,11 @@ for p in [LG, MAIN, TEST, PUB]:
     check(f"exists {p.name}", p.exists())
 check("exists home_widget_test", (ROOT / "test" / "home_widget_test.dart").exists())
 check("exists web-demo", (ROOT / "web-demo" / "index.html").exists())
+check("exists motion widgets", (ROOT / "lib" / "widgets" / "motion.dart").exists())
+check("exists README", (ROOT / "README.md").exists())
+check("exists analysis_options", (ROOT / "analysis_options.yaml").exists())
+check("workflow is flutter.yml", (ROOT / ".github" / "workflows" / "flutter.yml").exists())
+check("old workflow removed", not (ROOT / ".github" / "workflows" / "build-apk.yml").exists())
 
 src = LG.read_text(encoding="utf-8")
 main = MAIN.read_text(encoding="utf-8")

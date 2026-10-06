@@ -1,11 +1,11 @@
-name: build-apk
+name: flutter
 on:
   workflow_dispatch:
   push:
     branches: [main]
 
 jobs:
-  apk:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +19,10 @@ jobs:
           cp -r /tmp/shellapp/ios ./ios
           python3 tools/ci_inject_perms.py
       - run: flutter pub get
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed lib test tools/ci_inject_perms.py tools/verify.py tools/make_sounds.py
+      - name: Analyze
+        run: flutter analyze lib test
       - run: flutter test
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4

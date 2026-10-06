@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'lg_tv.dart';
 import 'services/sound_service.dart';
+import 'widgets/motion.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -254,6 +255,7 @@ class _HomePageState extends State<HomePage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                   child: CupertinoSlidingSegmentedControl<int>(
+                    key: const Key('segTabs'),
                     groupValue: _tab,
                     backgroundColor:
                         Colors.white.withOpacity(0.07),
@@ -434,6 +436,7 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(color: Colors.white54, fontSize: 13)),
             const Spacer(),
             Switch(
+                key: const Key('soundSwitch'),
                 value: soundOn,
                 activeColor: const Color(0xFF0A84FF),
                 onChanged: (v) {
@@ -460,6 +463,7 @@ class _HomePageState extends State<HomePage> {
           Row(children: [
             Expanded(
               child: ElevatedButton.icon(
+                key: const Key('scanBtn'),
                 onPressed: busy ? null : scan,
                 icon: const Icon(Icons.radar, size: 18),
                 label: Text(busy ? 'Scanning…' : 'Scan for TVs'),
@@ -482,37 +486,40 @@ class _HomePageState extends State<HomePage> {
           if (devices.isEmpty)
             const Text('Nothing yet — scan or enter IP below.',
                 style: TextStyle(color: Colors.white38, fontSize: 13)),
-          for (final d in devices)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: busy ? null : () => connectTo(d['ip']!),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white.withOpacity(0.04),
-                    border:
-                        Border.all(color: Colors.white.withOpacity(0.08)),
+          for (var i = 0; i < devices.length; i++)
+            Stagger(
+              index: i,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Pressable(
+                  onTap: busy ? null : () => connectTo(devices[i]['ip']!),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white.withOpacity(0.04),
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.08)),
+                    ),
+                    child: Row(children: [
+                      const Icon(Icons.tv, color: Color(0xFFFF9F0A)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                            Text(devices[i]['name'] ?? 'LG TV',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700)),
+                            Text(devices[i]['ip'] ?? '',
+                                style: const TextStyle(
+                                    color: Colors.white54, fontSize: 12)),
+                          ])),
+                      const Icon(Icons.arrow_forward_ios,
+                          size: 14, color: Colors.white38),
+                    ]),
                   ),
-                  child: Row(children: [
-                    const Icon(Icons.tv, color: Color(0xFFFF9F0A)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          Text(d['name'] ?? 'LG TV',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w700)),
-                          Text(d['ip'] ?? '',
-                              style: const TextStyle(
-                                  color: Colors.white54, fontSize: 12)),
-                        ])),
-                    const Icon(Icons.arrow_forward_ios,
-                        size: 14, color: Colors.white38),
-                  ]),
                 ),
               ),
             ),
@@ -523,6 +530,7 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
           TextField(
+            key: const Key('tvIpField'),
             controller: ipCtrl,
             onChanged: (_) => setState(() {}),
             keyboardType:
@@ -541,6 +549,7 @@ class _HomePageState extends State<HomePage> {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
+              key: const Key('pairBtn'),
               onPressed: busy
                   ? null
                   : () {
@@ -610,7 +619,11 @@ class _HomePageState extends State<HomePage> {
           const Text('Drag to move the cursor • tap to click',
               style: TextStyle(color: Colors.white38, fontSize: 12)),
           const SizedBox(height: 10),
-          GestureDetector(
+          Semantics(
+            label: 'Touchpad. Drag to move the TV cursor, double tap to click.',
+            button: true,
+            child: GestureDetector(
+              key: const Key('touchpad'),
             onPanUpdate: (d) {
               if (!connected) return;
               tv.pointerMove((d.delta.dx * 1.8).round(),
@@ -641,6 +654,7 @@ class _HomePageState extends State<HomePage> {
               alignment: Alignment.center,
               child: const Text('Touchpad',
                   style: TextStyle(color: Colors.white38, fontSize: 13)),
+            ),
             ),
           ),
         ]),
@@ -673,6 +687,7 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(fontWeight: FontWeight.w800)),
             const Spacer(),
             Switch(
+                key: const Key('muteSwitch'),
                 value: muted,
                 activeColor: const Color(0xFF0A84FF),
                 onChanged: (v) {
@@ -681,6 +696,7 @@ class _HomePageState extends State<HomePage> {
                 }),
           ]),
           Slider(
+            key: const Key('volumeSlider'),
             value: volume,
             min: 0,
             max: 100,
@@ -936,8 +952,7 @@ class _HomePageState extends State<HomePage> {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+        child: Pressable(
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 11),
@@ -960,8 +975,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _appTile(String name, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
+    return Pressable(
+      key: Key('app_$name'),
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
@@ -986,8 +1001,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _dpad() {
-    btn(IconData i, VoidCallback fn) => InkWell(
-          borderRadius: BorderRadius.circular(999),
+    btn(IconData i, VoidCallback fn) => Pressable(
           onTap: fn,
           child: Container(
             width: 60,
@@ -1018,8 +1032,7 @@ class _HomePageState extends State<HomePage> {
             Positioned(
                 right: 0,
                 child: btn(Icons.keyboard_arrow_right, () => _run(() => tv.sendKey('right')))),
-            InkWell(
-              borderRadius: BorderRadius.circular(999),
+            Pressable(
               onTap: () => _run(() => tv.sendKey('ok')),
               child: Container(
                 width: 78,
