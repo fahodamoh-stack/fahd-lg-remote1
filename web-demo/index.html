@@ -119,6 +119,9 @@
       <h3>التلفزيون</h3>
       <div class="pad"><input type="text" id="ip" inputmode="decimal" placeholder="192.168.1.50"></div>
       <div class="row"><span class="k">نفس الشبكة؟</span><span class="v" id="sameNet">اكتب الـ IP</span></div>
+      <div class="row"><span class="k">مؤثرات صوتية</span><span style="flex:1"></span>
+        <label class="sw"><input type="checkbox" id="sfx" checked><span></span></label>
+      </div>
       <div class="pad">
         <button class="btn blue" onclick="connect()">اتصال و Pairing</button>
         <button class="btn red" onclick="disconnect()">قطع الاتصال</button>
@@ -195,6 +198,28 @@
 
 <script>
 let ws=null, ptr=null, id=0, pending={}, connected=false, ptrReady=false;
+// --- tiny synth SFX (WebAudio, no files) ---
+let AC=null;
+function beep(f0,f1,ms,vol){
+  if(!document.getElementById('sfx').checked) return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(), g=AC.createGain(), t=AC.currentTime;
+    o.type='sine'; o.frequency.setValueAtTime(f0,t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(f1,1),t+ms/1000);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol,t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+ms/1000);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+ms/1000+0.02);
+  }catch(e){}
+}
+const sfx={
+  tap(){beep(880,660,60,0.18);},
+  toggle(){beep(660,990,70,0.18);},
+  success(){beep(660,660,110,0.2);setTimeout(()=>beep(990,990,160,0.2),110);},
+  error(){beep(220,160,200,0.2);}
+};
+document.addEventListener('click',e=>{ if(e.target.closest('button')) sfx.tap(); },true);
 function $(x){ return document.getElementById(x); }
 function setStatus(s){ $('status').textContent=s; }
 function setDot(on){ $('dot').classList.toggle('on',on); $('dotTx').textContent=on?'متصل':'غير متصل'; }
@@ -248,9 +273,9 @@ function connect(){
   ws.onmessage=(ev)=>{ let m; try{m=JSON.parse(ev.data);}catch(e){return;}
     if(m.type==='registered'){ const k=m.payload&&m.payload['client-key'];
       if(k) localStorage.setItem('lg_client_key',k);
-      connected=true; setDot(true); setStatus('متصل ✔'); openPointer(ip); tab(1); return; }
+      connected=true; setDot(true); setStatus('متصل ✔'); sfx.success(); openPointer(ip); tab(1); return; }
     if(m.id&&pending[m.id]){ pending[m.id](m); delete pending[m.id]; } };
-  ws.onerror=()=>setStatus('خطأ — نفس الواي فاي؟ الـ IP صح؟');
+  ws.onerror=()=>{ sfx.error(); setStatus('خطأ — نفس الواي فاي؟ الـ IP صح؟'); };
   ws.onclose=()=>{ connected=false; ptrReady=false; setDot(false); setStatus('انقطع الاتصال'); $('padState').textContent='المؤشر غير متصل'; };
 }
 function disconnect(silent){ try{ws&&ws.close();}catch(e){} try{ptr&&ptr.close();}catch(e){}

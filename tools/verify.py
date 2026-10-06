@@ -91,8 +91,24 @@ check("volume clamp", max(0, min(100, -5)) == 0 and max(0, min(100, 130)) == 100
 # 5. pubspec deps
 pub = PUB.read_text(encoding="utf-8")
 for d in ["web_socket_channel", "shared_preferences", "flutter_test",
-          "network_info_plus", "permission_handler"]:
+          "network_info_plus", "permission_handler", "audioplayers"]:
     check(f"pubspec has {d}", d in pub)
+check("sound service exists",
+      (ROOT / "lib" / "services" / "sound_service.dart").exists())
+check("main uses SoundService", "SoundService" in main)
+check("assets declared", "assets/sounds/" in pub)
+
+# 6. WAV assets valid (RIFF/WAVE, 16-bit mono)
+import wave as _w
+for f in ["tap.wav", "toggle.wav", "success.wav", "error.wav"]:
+    p = ROOT / "assets" / "sounds" / f
+    try:
+        with _w.open(str(p), "rb") as w:
+            ok = (w.getnchannels() == 1 and w.getsampwidth() == 2
+                  and w.getnframes() > 0)
+        check(f"wav valid {f}", ok)
+    except Exception as e:
+        check(f"wav valid {f}", False, str(e))
 
 print()
 if fails:

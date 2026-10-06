@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'lg_tv.dart';
+import 'services/sound_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +57,7 @@ class _HomePageState extends State<HomePage> {
   String phoneIp = '…';
   String wifiName = '…';
   bool ptrOk = false;
+  bool soundOn = true;
 
   @override
   void initState() {
@@ -66,6 +68,9 @@ class _HomePageState extends State<HomePage> {
       if (s.error) _snack(s.message, err: true);
     });
     _loadNet();
+    SoundService.instance.init().then((_) {
+      if (mounted) setState(() => soundOn = SoundService.instance.enabled);
+    });
   }
 
   /// Read connected-network info (IP always; SSID needs location
@@ -107,6 +112,7 @@ class _HomePageState extends State<HomePage> {
 
   void _snack(String m, {bool err = false}) {
     if (!mounted) return;
+    if (err) SoundService.instance.error();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(m, maxLines: 3, overflow: TextOverflow.ellipsis),
       backgroundColor: err ? const Color(0xFF3A1416) : const Color(0xFF2C2C2E),
@@ -121,9 +127,13 @@ class _HomePageState extends State<HomePage> {
       return;
     }
     HapticFeedback.lightImpact();
+    SoundService.instance.tap();
     try {
       await fn();
-      if (ok != null) _snack(ok);
+      if (ok != null) {
+        SoundService.instance.success();
+        _snack(ok);
+      }
     } catch (e) {
       _snack(_cleanErr(e), err: true);
     }
@@ -170,6 +180,7 @@ class _HomePageState extends State<HomePage> {
         if (mounted) setState(() => ptrOk = false);
       }
       _loadNet();
+      SoundService.instance.success();
       _snack('Connected — pairing saved');
     } catch (e) {
       setState(() => status = _cleanErr(e));
@@ -218,8 +229,10 @@ class _HomePageState extends State<HomePage> {
                             style: TextStyle(fontSize: 13)),
                       ),
                     },
-                    onValueChanged: (v) =>
-                        setState(() => _tab = v ?? 0),
+                    onValueChanged: (v) {
+                      SoundService.instance.toggle();
+                      setState(() => _tab = v ?? 0);
+                    },
                   ),
                 ),
                 Expanded(
@@ -367,6 +380,19 @@ class _HomePageState extends State<HomePage> {
                   ? '…'
                   : (same ? 'Yes ✔' : 'No ✘'),
               good: tvIp.isEmpty ? null : same),
+          Row(children: [
+            const Text('Sound effects',
+                style: TextStyle(color: Colors.white54, fontSize: 13)),
+            const Spacer(),
+            Switch(
+                value: soundOn,
+                activeColor: const Color(0xFF0A84FF),
+                onChanged: (v) {
+                  setState(() => soundOn = v);
+                  SoundService.instance.setEnabled(v);
+                  if (v) SoundService.instance.toggle();
+                }),
+          ]),
           TextButton.icon(
             onPressed: _loadNet,
             icon: const Icon(Icons.refresh, size: 16),
