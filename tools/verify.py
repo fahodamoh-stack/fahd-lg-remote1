@@ -104,6 +104,9 @@ check("remembers IP (app)", "fa_last_ip" in src or "fa_last_ip" in main)
 check("remembers IP (demo)",
       "fa_last_ip" in (ROOT / "web-demo" / "index.html").read_text(encoding="utf-8"))
 check("forget TV option", "Forget saved TV" in main)
+check("no deprecated withOpacity", "withOpacity" not in main)
+check("no bad MediaQuery API", "maybeDisableAnimations" not in (
+    ROOT / "lib" / "widgets" / "motion.dart").read_text(encoding="utf-8"))
 check("main uses SoundService", "SoundService" in main)
 check("assets declared", "assets/sounds/" in pub)
 

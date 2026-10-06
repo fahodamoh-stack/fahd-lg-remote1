@@ -57,7 +57,7 @@ class _StaggerState extends State<Stagger> {
 
   @override
   Widget build(BuildContext context) {
-    final reduce = MediaQuery.maybeDisableAnimations(context);
+    final reduce = MediaQuery.disableAnimationsOf(context);
     if (reduce) return widget.child;
     return AnimatedOpacity(
       opacity: _in ? 1 : 0,

@@ -261,7 +261,7 @@ class _HomePageState extends State<HomePage> {
                   child: CupertinoSlidingSegmentedControl<int>(
                     key: const Key('segTabs'),
                     groupValue: _tab,
-                    backgroundColor: Colors.white.withOpacity(0.07),
+                    backgroundColor: Colors.white.withValues(alpha: 0.07),
                     thumbColor: const Color(0xFF3A3A3C),
                     children: const {
                       0: Padding(
@@ -325,7 +325,7 @@ class _HomePageState extends State<HomePage> {
               ),
               boxShadow: [
                 BoxShadow(
-                    color: const Color(0xFF0A84FF).withOpacity(0.35),
+                    color: const Color(0xFF0A84FF).withValues(alpha: 0.35),
                     blurRadius: 18,
                     offset: const Offset(0, 6)),
               ],
@@ -388,8 +388,8 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: Colors.white.withOpacity(0.05),
-          border: Border.all(color: Colors.white.withOpacity(0.09)),
+          color: Colors.white.withValues(alpha: 0.05),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
         ),
         child: Row(children: [
           if (busy)
@@ -423,7 +423,7 @@ class _HomePageState extends State<HomePage> {
             const Text('Network',
                 style: TextStyle(fontWeight: FontWeight.w800)),
             const Spacer(),
-            Icon(Icons.wifi, color: Colors.white.withOpacity(0.4)),
+            Icon(Icons.wifi, color: Colors.white.withValues(alpha: 0.4)),
           ]),
           const SizedBox(height: 10),
           _netRow('Phone IP', phoneIp),
@@ -439,7 +439,7 @@ class _HomePageState extends State<HomePage> {
             Switch(
                 key: const Key('soundSwitch'),
                 value: soundOn,
-                activeColor: const Color(0xFF0A84FF),
+                activeThumbColor: const Color(0xFF0A84FF),
                 onChanged: (v) {
                   setState(() => soundOn = v);
                   SoundService.instance.setEnabled(v);
@@ -499,8 +499,8 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: Colors.white.withOpacity(0.04),
-                      border: Border.all(color: Colors.white.withOpacity(0.08)),
+                      color: Colors.white.withValues(alpha: 0.04),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                     ),
                     child: Row(children: [
                       const Icon(Icons.tv, color: Color(0xFFFF9F0A)),
@@ -538,7 +538,7 @@ class _HomePageState extends State<HomePage> {
               hintText: '192.168.1.50',
               prefixIcon: const Icon(Icons.lan_outlined),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
+              fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none),
@@ -645,11 +645,11 @@ class _HomePageState extends State<HomePage> {
                 height: 132,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  color: Colors.white.withOpacity(0.06),
+                  color: Colors.white.withValues(alpha: 0.06),
                   border: Border.all(
                       color: ptrOk
                           ? const Color(0xFF0A84FF)
-                          : Colors.white.withOpacity(0.1)),
+                          : Colors.white.withValues(alpha: 0.1)),
                 ),
                 alignment: Alignment.center,
                 child: const Text('Touchpad',
@@ -666,7 +666,7 @@ class _HomePageState extends State<HomePage> {
               const Text('Direction pad',
                   style: TextStyle(fontWeight: FontWeight.w800)),
               Icon(Icons.gamepad_outlined,
-                  color: Colors.white.withOpacity(0.4)),
+                  color: Colors.white.withValues(alpha: 0.4)),
             ],
           ),
           const SizedBox(height: 14),
@@ -688,7 +688,7 @@ class _HomePageState extends State<HomePage> {
             Switch(
                 key: const Key('muteSwitch'),
                 value: muted,
-                activeColor: const Color(0xFF0A84FF),
+                activeThumbColor: const Color(0xFF0A84FF),
                 onChanged: (v) {
                   setState(() => muted = v);
                   _run(() => tv.setMuted(v));
@@ -742,7 +742,7 @@ class _HomePageState extends State<HomePage> {
               hintText: 'Other app ID — e.g. amazon',
               prefixIcon: const Icon(Icons.apps_outlined),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
+              fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none),
@@ -777,7 +777,7 @@ class _HomePageState extends State<HomePage> {
               hintText: 'Show message on TV…',
               prefixIcon: const Icon(Icons.message_outlined),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
+              fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none),
@@ -826,7 +826,7 @@ class _HomePageState extends State<HomePage> {
               hintText: 'https://youtube.com/watch?v=…',
               prefixIcon: const Icon(Icons.ondemand_video),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
+              fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none),
@@ -868,7 +868,7 @@ class _HomePageState extends State<HomePage> {
               hintText: 'https://…/video.mp4',
               prefixIcon: const Icon(Icons.link),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
+              fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none),
@@ -932,11 +932,11 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: const Color(0xFF1C1C1E).withOpacity(0.9),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        color: const Color(0xFF1C1C1E).withValues(alpha: 0.9),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               blurRadius: 24,
               offset: const Offset(0, 10)),
         ],
@@ -956,8 +956,8 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.symmetric(vertical: 11),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: Colors.white.withOpacity(0.06),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
+              color: Colors.white.withValues(alpha: 0.06),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: Column(children: [
               Icon(icon, size: 19),
@@ -982,11 +982,11 @@ class _HomePageState extends State<HomePage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.white.withOpacity(0.09),
-              Colors.white.withOpacity(0.03),
+              Colors.white.withValues(alpha: 0.09),
+              Colors.white.withValues(alpha: 0.03),
             ],
           ),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(icon, size: 22),
@@ -1005,8 +1005,8 @@ class _HomePageState extends State<HomePage> {
             height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.06),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              color: Colors.white.withValues(alpha: 0.06),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: Icon(i),
           ),
@@ -1087,7 +1087,7 @@ class _Backdrop extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(colors: [
-              const Color(0xFF0A84FF).withOpacity(0.28),
+              const Color(0xFF0A84FF).withValues(alpha: 0.28),
               Colors.transparent,
             ]),
           ),
@@ -1102,7 +1102,7 @@ class _Backdrop extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(colors: [
-              const Color(0xFF2B3A8F).withOpacity(0.35),
+              const Color(0xFF2B3A8F).withValues(alpha: 0.35),
               Colors.transparent,
             ]),
           ),
