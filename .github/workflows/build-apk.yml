@@ -12,6 +12,27 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Generate native folders
+        run: |
+          flutter create --project-name fahd_lg_remote --org com.example.fahd /tmp/shellapp --platforms=android,ios
+          cp -r /tmp/shellapp/android ./android
+          cp -r /tmp/shellapp/ios ./ios
+          python3 - <<'EOF'
+          import pathlib
+          m = pathlib.Path('android/app/src/main/AndroidManifest.xml')
+          t = m.read_text()
+          perms = '''<uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    '''
+          if 'ACCESS_WIFI_STATE' not in t:
+              t = t.replace('<application', perms + '<application')
+              m.write_text(t)
+              print('permissions injected')
+          else:
+              print('permissions already present')
+          EOF
       - run: flutter pub get
       - run: flutter test
       - run: flutter build apk --release
