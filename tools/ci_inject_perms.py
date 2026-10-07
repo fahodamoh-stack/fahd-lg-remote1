@@ -24,3 +24,23 @@ else:
     text = text.replace("<application", PERMS + "<application", 1)
     MANIFEST.write_text(text, encoding="utf-8")
     print("permissions injected")
+
+# permission_handler_android requires compileSdk 37+, while
+# `flutter create` still generates 36. Bump it.
+GRADLE = pathlib.Path("android/app/build.gradle.kts")
+if not GRADLE.exists():
+    print(f"build file not found: {GRADLE}")
+    sys.exit(1)
+
+g = GRADLE.read_text(encoding="utf-8")
+if "compileSdk = 37" in g:
+    print("compileSdk already 37")
+elif "compileSdk = flutter.compileSdkVersion" in g:
+    g = g.replace(
+        "compileSdk = flutter.compileSdkVersion", "compileSdk = 37", 1
+    )
+    GRADLE.write_text(g, encoding="utf-8")
+    print("compileSdk bumped to 37")
+else:
+    print("compileSdk line not recognized, leaving as-is")
+    print([line for line in g.splitlines() if "compileSdk" in line])
