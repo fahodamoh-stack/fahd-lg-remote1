@@ -255,6 +255,7 @@ class _HomePageState extends State<HomePage> {
       setState(() => tvSources = s);
     } catch (_) {}
   }
+
   Future<void> connectTo(String ip, {bool quiet = false}) async {
     setState(() {
       busy = true;
@@ -781,14 +782,12 @@ class _HomePageState extends State<HomePage> {
           if (channelInfo.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(channelInfo,
-                style: const TextStyle(
-                    color: Colors.white54, fontSize: 12)),
+                style: const TextStyle(color: Colors.white54, fontSize: 12)),
           ],
         ]),
         const SizedBox(height: 12),
         _card(children: [
-          const Text('Numbers',
-              style: TextStyle(fontWeight: FontWeight.w800)),
+          const Text('Numbers', style: TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
           for (final row in [
             ['1', '2', '3'],
@@ -819,16 +818,22 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
           Row(children: [
-            _pillBtn(Icons.menu_outlined, 'Menu', () => _run(() => tv.press('menu'))),
-            _pillBtn(Icons.info_outline, 'Info', () => _run(() => tv.press('info'))),
+            _pillBtn(Icons.menu_outlined, 'Menu',
+                () => _run(() => tv.press('menu'))),
+            _pillBtn(
+                Icons.info_outline, 'Info', () => _run(() => tv.press('info'))),
             _pillBtn(Icons.exit_to_app, 'Exit', () => _run(tv.exitApp)),
           ]),
           const SizedBox(height: 8),
           Row(children: [
-            _colorBtn(const Color(0xFFFF453A), () => _run(() => tv.press('red'))),
-            _colorBtn(const Color(0xFF30D158), () => _run(() => tv.press('green'))),
-            _colorBtn(const Color(0xFFFFD60A), () => _run(() => tv.press('yellow'))),
-            _colorBtn(const Color(0xFF0A84FF), () => _run(() => tv.press('blue'))),
+            _colorBtn(
+                const Color(0xFFFF453A), () => _run(() => tv.press('red'))),
+            _colorBtn(
+                const Color(0xFF30D158), () => _run(() => tv.press('green'))),
+            _colorBtn(
+                const Color(0xFFFFD60A), () => _run(() => tv.press('yellow'))),
+            _colorBtn(
+                const Color(0xFF0A84FF), () => _run(() => tv.press('blue'))),
           ]),
         ]),
         const SizedBox(height: 12),
@@ -836,7 +841,8 @@ class _HomePageState extends State<HomePage> {
           const Text('Send text to TV',
               style: TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
-          const Text('Opens nothing by itself — focus a text field on the TV first, then send.',
+          const Text(
+              'Opens nothing by itself — focus a text field on the TV first, then send.',
               style: TextStyle(color: Colors.white38, fontSize: 12)),
           const SizedBox(height: 10),
           TextField(
@@ -1006,8 +1012,7 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(color: Colors.white38, fontSize: 13)),
           if (frontApp != null && frontApp!.isNotEmpty)
             Text('Now: $frontApp',
-                style: const TextStyle(
-                    color: Color(0xFF30D158), fontSize: 13)),
+                style: const TextStyle(color: Color(0xFF30D158), fontSize: 13)),
           if (tvApps.isNotEmpty) ...[
             const SizedBox(height: 10),
             const Text('Apps on TV',
@@ -1036,8 +1041,7 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                           child: Text(
                               ((a['title'] ?? a['id'] ?? '?')).toString(),
-                              style:
-                                  const TextStyle(fontSize: 14))),
+                              style: const TextStyle(fontSize: 14))),
                       if (frontApp != null &&
                           frontApp == (a['id'] ?? '').toString())
                         const Text('● now',
@@ -1075,8 +1079,7 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                           child: Text(
                               ((s['label'] ?? s['id'] ?? '?')).toString(),
-                              style:
-                                  const TextStyle(fontSize: 14))),
+                              style: const TextStyle(fontSize: 14))),
                     ]),
                   ),
                 ),
@@ -1241,8 +1244,7 @@ class _HomePageState extends State<HomePage> {
               child: Container(
                 width: 16,
                 height: 16,
-                decoration:
-                    BoxDecoration(shape: BoxShape.circle, color: c),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: c),
               ),
             ),
           ),

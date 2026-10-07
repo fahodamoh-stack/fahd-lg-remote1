@@ -22,7 +22,8 @@ void main() {
 
   group('request envelope', () {
     test('ssap format', () {
-      final r = WebosMessages.buildRequest('req_1', 'ssap://audio/volumeUp', {});
+      final r =
+          WebosMessages.buildRequest('req_1', 'ssap://audio/volumeUp', {});
       expect(r['id'], 'req_1');
       expect(r['type'], 'request');
       expect(r['uri'], 'ssap://audio/volumeUp');
@@ -85,7 +86,8 @@ void main() {
       expect(WebosMessages.pointerClickMsg(), 'type:click\n\n');
       expect(WebosMessages.pointerScrollMsg(0, -10),
           'type:scroll\ndx:0\ndy:-10\n\n');
-      expect(WebosMessages.pointerButtonMsg('HOME'), 'type:button\nname:HOME\n\n');
+      expect(
+          WebosMessages.pointerButtonMsg('HOME'), 'type:button\nname:HOME\n\n');
     });
     test('verified button names', () {
       final b = WebosMessages.inputButtons;

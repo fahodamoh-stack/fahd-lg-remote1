@@ -307,9 +307,10 @@ class LgTv {
   Future<void> pointerButton(String name) async =>
       _ptrSend(WebosMessages.pointerButtonMsg(name));
 
-  Future<void> volumeUp() => press('volUp').catchError((_) => _req('ssap://audio/volumeUp').then((_) {}));
-  Future<void> volumeDown() =>
-      press('volDown').catchError((_) => _req('ssap://audio/volumeDown').then((_) {}));
+  Future<void> volumeUp() => press('volUp')
+      .catchError((_) => _req('ssap://audio/volumeUp').then((_) {}));
+  Future<void> volumeDown() => press('volDown')
+      .catchError((_) => _req('ssap://audio/volumeDown').then((_) {}));
   Future<void> setVolume(int v) =>
       _req('ssap://audio/setVolume', {'volume': clampVolume(v)}).then((_) {});
 
@@ -336,9 +337,10 @@ class LgTv {
     }
   }
 
-  Future<void> channelUp() => press('chUp').catchError((_) => _req('ssap://tv/channelUp').then((_) {}));
-  Future<void> channelDown() =>
-      press('chDown').catchError((_) => _req('ssap://tv/channelDown').then((_) {}));
+  Future<void> channelUp() =>
+      press('chUp').catchError((_) => _req('ssap://tv/channelUp').then((_) {}));
+  Future<void> channelDown() => press('chDown')
+      .catchError((_) => _req('ssap://tv/channelDown').then((_) {}));
 
   Future<void> currentChannel() async {
     final res = await _req('ssap://tv/getCurrentChannel');
@@ -364,11 +366,11 @@ class LgTv {
   /// Sends text via the on-screen keyboard (IME). The TV must show
   /// a text field for keystrokes to land.
   Future<void> typeText(String text) => _req(
-          'ssap://com.webos.service.ime/insertText',
-          {'text': text, 'replace': 0}).then((_) {});
-  Future<void> deleteChars(int count) => _req(
-          'ssap://com.webos.service.ime/deleteCharacters', {'count': count})
-      .then((_) {});
+      'ssap://com.webos.service.ime/insertText',
+      {'text': text, 'replace': 0}).then((_) {});
+  Future<void> deleteChars(int count) =>
+      _req('ssap://com.webos.service.ime/deleteCharacters', {'count': count})
+          .then((_) {});
   Future<void> sendEnter() =>
       _req('ssap://com.webos.service.ime/sendEnterKey').then((_) {});
 
@@ -388,11 +390,13 @@ class LgTv {
 
   /// Installed apps on the TV: [{id, title, ...}].
   Future<List<Map<String, dynamic>>> listApps() async {
-    final res =
-        await _req('ssap://com.webos.applicationManager/listApps');
+    final res = await _req('ssap://com.webos.applicationManager/listApps');
     final apps = res['payload']?['apps'];
     if (apps is List) {
-      return apps.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      return apps
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     }
     throw StateError('TV did not return an app list');
   }
@@ -408,15 +412,18 @@ class LgTv {
     }
   }
 
-  Future<void> closeApp(String appId) => _req(
-          'ssap://system.launcher/close', {'id': appId}).then((_) {});
+  Future<void> closeApp(String appId) =>
+      _req('ssap://system.launcher/close', {'id': appId}).then((_) {});
 
   /// TV inputs/sources: [{id, label, ...}].
   Future<List<Map<String, dynamic>>> listSources() async {
     final res = await _req('ssap://tv/getExternalInputList');
     final devs = res['payload']?['devices'];
     if (devs is List) {
-      return devs.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      return devs
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     }
     throw StateError('TV did not return inputs');
   }
@@ -436,10 +443,12 @@ class LgTv {
   Future<void> netflix() => launchApp('netflix');
   Future<void> liveTv() => launchApp('com.webos.app.livetv');
 
-  Future<void> play() => press('play').catchError((_) => _req('ssap://media.controls/play').then((_) {}));
-  Future<void> pause() =>
-      press('pause').catchError((_) => _req('ssap://media.controls/pause').then((_) {}));
-  Future<void> stop() => press('stop').catchError((_) => _req('ssap://media.controls/stop').then((_) {}));
+  Future<void> play() => press('play')
+      .catchError((_) => _req('ssap://media.controls/play').then((_) {}));
+  Future<void> pause() => press('pause')
+      .catchError((_) => _req('ssap://media.controls/pause').then((_) {}));
+  Future<void> stop() => press('stop')
+      .catchError((_) => _req('ssap://media.controls/stop').then((_) {}));
   Future<void> rewind() => _req('ssap://media.controls/rewind').then((_) {});
   Future<void> fastForward() =>
       _req('ssap://media.controls/fastForward').then((_) {});

@@ -118,8 +118,7 @@ abstract final class WebosMessages {
   static String pointerClickMsg() => 'type:click\n\n';
   static String pointerScrollMsg(int dx, int dy) =>
       'type:scroll\ndx:$dx\ndy:$dy\n\n';
-  static String pointerButtonMsg(String name) =>
-      'type:button\nname:$name\n\n';
+  static String pointerButtonMsg(String name) => 'type:button\nname:$name\n\n';
 
   /// Verified input-socket button names (up/down/left/right/ok/digits/
   /// colors/media...). Sent via [pointerButtonMsg].
