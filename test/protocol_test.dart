@@ -90,7 +90,7 @@ void main() {
           WebosMessages.pointerButtonMsg('HOME'), 'type:button\nname:HOME\n\n');
     });
     test('verified button names', () {
-      final b = WebosMessages.inputButtons;
+      const b = WebosMessages.inputButtons;
       expect(b['ok'], 'ENTER');
       expect(b['up'], 'UP');
       expect(b['1'], '1');

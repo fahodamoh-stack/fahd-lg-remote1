@@ -23,6 +23,7 @@ class LgTv {
   final Map<String, Completer<Map<String, dynamic>>> _pending = {};
   final StreamController<LgState> _stateCtrl =
       StreamController<LgState>.broadcast();
+  final FlutterSecureStorage _secure = const FlutterSecureStorage();
 
   String? ip;
   String? clientKey;
@@ -173,7 +174,7 @@ class LgTv {
     }
 
     final registered = Completer<void>();
-    _sub = _ch!.stream.listen((raw) {
+    _sub = _ch!.stream.listen((raw) async {
       try {
         final m = jsonDecode(raw as String) as Map<String, dynamic>;
         final type = m['type']?.toString() ?? '';
@@ -342,7 +343,7 @@ class LgTv {
   Future<void> channelDown() => press('chDown')
       .catchError((_) => _req('ssap://tv/channelDown').then((_) {}));
 
-  Future<void> currentChannel() async {
+  Future<dynamic> currentChannel() async {
     final res = await _req('ssap://tv/getCurrentChannel');
     return res['payload'];
   }
