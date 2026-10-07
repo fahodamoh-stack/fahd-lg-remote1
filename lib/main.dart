@@ -54,12 +54,18 @@ class _HomePageState extends State<HomePage> {
   final urlCtrl = TextEditingController();
   final ytCtrl = TextEditingController();
   final appIdCtrl = TextEditingController();
+  final textCtrl = TextEditingController();
   double volume = 20;
   bool muted = false;
   String phoneIp = '…';
   String wifiName = '…';
   bool ptrOk = false;
   bool soundOn = true;
+  bool autoRc = true;
+  List<Map<String, dynamic>> tvApps = [];
+  List<Map<String, dynamic>> tvSources = [];
+  String? frontApp;
+  String channelInfo = '';
 
   @override
   void initState() {
@@ -84,10 +90,7 @@ class _HomePageState extends State<HomePage> {
       final ip = (prefs.getString('fa_last_ip') ?? '').trim();
       if (ip.isEmpty || !mounted) return;
       setState(() => ipCtrl.text = ip);
-      final hasKey = (prefs.getString('lg_client_key_$ip') ??
-              prefs.getString('lg_client_key') ??
-              '')
-          .isNotEmpty;
+      final hasKey = await tv.hasSavedKey(ip);
       if (hasKey) {
         await connectTo(ip, quiet: true);
       } else {
@@ -99,14 +102,9 @@ class _HomePageState extends State<HomePage> {
   Future<void> _forgetTv() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final keys = prefs.getKeys().where((k) =>
-          k == 'fa_last_ip' ||
-          k == 'lg_client_key' ||
-          k.startsWith('lg_client_key_'));
-      for (final k in keys) {
-        await prefs.remove(k);
-      }
+      await prefs.remove('fa_last_ip');
     } catch (_) {}
+    await tv.forgetKeys();
     tv.disconnect();
     setState(() {
       connected = false;
@@ -152,6 +150,7 @@ class _HomePageState extends State<HomePage> {
     urlCtrl.dispose();
     ytCtrl.dispose();
     appIdCtrl.dispose();
+    textCtrl.dispose();
     super.dispose();
   }
 
@@ -209,6 +208,53 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Pulls live state from the TV after connect. All best-effort:
+  /// a TV that refuses one call still keeps the rest working.
+  Future<void> _syncFromTv() async {
+    try {
+      final v = await tv.getVolume();
+      if (mounted) setState(() => volume = v.toDouble());
+    } catch (_) {}
+    try {
+      final m = await tv.getMuted();
+      if (mounted) setState(() => muted = m);
+    } catch (_) {}
+    await _refreshApps();
+    await _refreshSources();
+    try {
+      final ch = await tv.currentChannel();
+      if (mounted && ch is Map) {
+        final num = (ch['channelNumber'] ?? ch['channelId'] ?? '').toString();
+        if (num.isNotEmpty) setState(() => channelInfo = 'CH $num');
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _refreshApps() async {
+    try {
+      final apps = await tv.listApps();
+      apps.sort((a, b) => (a['title'] ?? a['id'] ?? '')
+          .toString()
+          .compareTo((b['title'] ?? b['id'] ?? '').toString()));
+      String? fg;
+      try {
+        fg = await tv.foregroundApp();
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() {
+        tvApps = apps;
+        frontApp = fg;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _refreshSources() async {
+    try {
+      final s = await tv.listSources();
+      if (!mounted) return;
+      setState(() => tvSources = s);
+    } catch (_) {}
+  }
   Future<void> connectTo(String ip, {bool quiet = false}) async {
     setState(() {
       busy = true;
@@ -217,6 +263,7 @@ class _HomePageState extends State<HomePage> {
           : 'Pairing with $ip — accept prompt on TV…';
     });
     try {
+      tv.autoReconnect = autoRc;
       await tv.connect(ip.trim());
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -234,6 +281,7 @@ class _HomePageState extends State<HomePage> {
         if (mounted) setState(() => ptrOk = false);
       }
       _loadNet();
+      _syncFromTv();
       SoundService.instance.success();
       if (!quiet) _snack('Connected — pairing saved');
     } catch (e) {
@@ -458,9 +506,22 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
           const Text(
-              'Phone and LG TV must be on the same Wi-Fi network. On TV: Settings → Network → Wi-Fi Connection.',
+              'Phone and LG TV must be on the same Wi-Fi network. On the TV, enable “LG Connect Apps” (Settings → Network) or “Mobile TV On” on older models, then accept Allow on the TV screen.',
               style:
                   TextStyle(color: Colors.white54, fontSize: 13, height: 1.5)),
+          const SizedBox(height: 10),
+          Row(children: [
+            const Text('Auto-reconnect on drop',
+                style: TextStyle(color: Colors.white54, fontSize: 13)),
+            const Spacer(),
+            Switch(
+                value: autoRc,
+                activeThumbColor: const Color(0xFF0A84FF),
+                onChanged: (v) {
+                  setState(() => autoRc = v);
+                  tv.autoReconnect = v;
+                }),
+          ]),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(
@@ -717,6 +778,114 @@ class _HomePageState extends State<HomePage> {
             _pillBtn(Icons.power_settings_new, 'Off',
                 () => _run(tv.powerOff, 'TV turning off…')),
           ]),
+          if (channelInfo.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(channelInfo,
+                style: const TextStyle(
+                    color: Colors.white54, fontSize: 12)),
+          ],
+        ]),
+        const SizedBox(height: 12),
+        _card(children: [
+          const Text('Numbers',
+              style: TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          for (final row in [
+            ['1', '2', '3'],
+            ['4', '5', '6'],
+            ['7', '8', '9'],
+            ['-', '0', '⌫'],
+          ])
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(children: [
+                for (final d in row)
+                  _pillBtn(
+                      d == '⌫'
+                          ? Icons.backspace_outlined
+                          : Icons.dialpad_outlined,
+                      d == '-' ? '' : d,
+                      d == '⌫'
+                          ? () => _run(() => tv.press('back'))
+                          : d == '-'
+                              ? () => _run(() => tv.press('dash'))
+                              : () => _run(() => tv.press(d))),
+              ]),
+            ),
+        ]),
+        const SizedBox(height: 12),
+        _card(children: [
+          const Text('Menu & colors',
+              style: TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          Row(children: [
+            _pillBtn(Icons.menu_outlined, 'Menu', () => _run(() => tv.press('menu'))),
+            _pillBtn(Icons.info_outline, 'Info', () => _run(() => tv.press('info'))),
+            _pillBtn(Icons.exit_to_app, 'Exit', () => _run(tv.exitApp)),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            _colorBtn(const Color(0xFFFF453A), () => _run(() => tv.press('red'))),
+            _colorBtn(const Color(0xFF30D158), () => _run(() => tv.press('green'))),
+            _colorBtn(const Color(0xFFFFD60A), () => _run(() => tv.press('yellow'))),
+            _colorBtn(const Color(0xFF0A84FF), () => _run(() => tv.press('blue'))),
+          ]),
+        ]),
+        const SizedBox(height: 12),
+        _card(children: [
+          const Text('Send text to TV',
+              style: TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          const Text('Opens nothing by itself — focus a text field on the TV first, then send.',
+              style: TextStyle(color: Colors.white38, fontSize: 12)),
+          const SizedBox(height: 10),
+          TextField(
+            controller: textCtrl,
+            decoration: InputDecoration(
+              hintText: 'Type here…',
+              prefixIcon: const Icon(Icons.keyboard_outlined),
+              filled: true,
+              fillColor: Colors.white.withValues(alpha: 0.05),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  final t = textCtrl.text;
+                  if (t.isEmpty) return;
+                  _run(() => tv.typeText(t), 'Sent');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0A84FF),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Send',
+                    style: TextStyle(fontWeight: FontWeight.w800)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => _run(() => tv.sendEnter(), 'Enter sent'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  side: const BorderSide(color: Color(0xFF0A84FF)),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Enter'),
+              ),
+            ),
+          ]),
         ]),
         const SizedBox(height: 12),
         _card(children: [
@@ -815,6 +984,107 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
       children: [
         _card(children: [
+          Row(children: [
+            const Text('On your TV',
+                style: TextStyle(fontWeight: FontWeight.w800)),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: !connected
+                  ? null
+                  : () async {
+                      await _refreshApps();
+                      await _refreshSources();
+                      _snack('Lists refreshed');
+                    },
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Refresh'),
+            ),
+          ]),
+          const SizedBox(height: 6),
+          if (!connected)
+            const Text('Connect first to see TV apps and inputs.',
+                style: TextStyle(color: Colors.white38, fontSize: 13)),
+          if (frontApp != null && frontApp!.isNotEmpty)
+            Text('Now: $frontApp',
+                style: const TextStyle(
+                    color: Color(0xFF30D158), fontSize: 13)),
+          if (tvApps.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text('Apps on TV',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            const SizedBox(height: 6),
+            for (final a in tvApps.take(12))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Pressable(
+                  onTap: () => _run(
+                      () => tv.launchApp((a['id'] ?? '').toString()),
+                      'Opening ${(a['title'] ?? a['id'])}…'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 11),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white.withValues(alpha: 0.04),
+                      border: Border.all(
+                          color: frontApp != null &&
+                                  frontApp == (a['id'] ?? '').toString()
+                              ? const Color(0xFF30D158)
+                              : Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: Row(children: [
+                      Expanded(
+                          child: Text(
+                              ((a['title'] ?? a['id'] ?? '?')).toString(),
+                              style:
+                                  const TextStyle(fontSize: 14))),
+                      if (frontApp != null &&
+                          frontApp == (a['id'] ?? '').toString())
+                        const Text('● now',
+                            style: TextStyle(
+                                color: Color(0xFF30D158), fontSize: 12)),
+                    ]),
+                  ),
+                ),
+              ),
+          ],
+          if (tvSources.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text('Inputs',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            const SizedBox(height: 6),
+            for (final s in tvSources)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Pressable(
+                  onTap: () => _run(
+                      () => tv.setSource((s['id'] ?? '').toString()),
+                      'Switching input…'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 11),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white.withValues(alpha: 0.04),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: Row(children: [
+                      const Icon(Icons.input_outlined, size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                          child: Text(
+                              ((s['label'] ?? s['id'] ?? '?')).toString(),
+                              style:
+                                  const TextStyle(fontSize: 14))),
+                    ]),
+                  ),
+                ),
+              ),
+          ],
+        ]),
+        const SizedBox(height: 12),
+        _card(children: [
           const Text('Cast YouTube',
               style: TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
@@ -904,6 +1174,13 @@ class _HomePageState extends State<HomePage> {
             _pillBtn(Icons.pause, 'Pause', () => _run(tv.pause)),
             _pillBtn(Icons.stop, 'Stop', () => _run(tv.stop)),
           ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            _pillBtn(Icons.fast_rewind, 'Rew', () => _run(tv.rewind)),
+            _pillBtn(Icons.fast_forward, 'FF', () => _run(tv.fastForward)),
+            _pillBtn(Icons.refresh_outlined, 'Apps',
+                () => _run(_refreshApps, 'Apps refreshed')),
+          ]),
         ]),
       ],
     );
@@ -944,6 +1221,33 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, children: children),
+    );
+  }
+
+  Widget _colorBtn(Color c, VoidCallback onTap) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Pressable(
+          onTap: onTap,
+          child: Container(
+            height: 44,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: c.withValues(alpha: 0.22),
+              border: Border.all(color: c.withValues(alpha: 0.5)),
+            ),
+            child: Center(
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration:
+                    BoxDecoration(shape: BoxShape.circle, color: c),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

@@ -110,12 +110,66 @@ abstract final class WebosMessages {
         b.trim().split('.').sublist(0, 3).join('.');
   }
 
-  // ---------- Pointer (Magic-remote cursor) frames ----------
-  static String pointerMoveMsg(int dx, int dy) => 'type:move\ndx:$dx\ndy:$dy\n';
-  static String pointerClickMsg() => 'type:click\n';
+  // ---------- Pointer / input-socket frames ----------
+  // Exact format per the verified input-socket protocol
+  // (getPointerInputSocket): "key:value" lines ending with a blank line.
+  static String pointerMoveMsg(int dx, int dy) =>
+      'type:move\ndx:$dx\ndy:$dy\n\n';
+  static String pointerClickMsg() => 'type:click\n\n';
   static String pointerScrollMsg(int dx, int dy) =>
-      'type:scroll\ndx:$dx\ndy:$dy\n';
-  static String pointerButtonMsg(String name) => 'type:button\nname:$name\n';
+      'type:scroll\ndx:$dx\ndy:$dy\n\n';
+  static String pointerButtonMsg(String name) =>
+      'type:button\nname:$name\n\n';
+
+  /// Verified input-socket button names (up/down/left/right/ok/digits/
+  /// colors/media...). Sent via [pointerButtonMsg].
+  static const Map<String, String> inputButtons = {
+    'up': 'UP',
+    'down': 'DOWN',
+    'left': 'LEFT',
+    'right': 'RIGHT',
+    'ok': 'ENTER',
+    'home': 'HOME',
+    'back': 'BACK',
+    'menu': 'MENU',
+    'exit': 'EXIT',
+    'info': 'INFO',
+    'dash': 'DASH',
+    'cc': 'CC',
+    'asterisk': 'ASTERISK',
+    'mute': 'MUTE',
+    'volUp': 'VOLUMEUP',
+    'volDown': 'VOLUMEDOWN',
+    'chUp': 'CHANNELUP',
+    'chDown': 'CHANNELDOWN',
+    'play': 'PLAY',
+    'pause': 'PAUSE',
+    'stop': 'STOP',
+    'rewind': 'REWIND',
+    'fastForward': 'FASTFORWARD',
+    'red': 'RED',
+    'green': 'GREEN',
+    'yellow': 'YELLOW',
+    'blue': 'BLUE',
+    '0': '0',
+    '1': '1',
+    '2': '2',
+    '3': '3',
+    '4': '4',
+    '5': '5',
+    '6': '6',
+    '7': '7',
+    '8': '8',
+    '9': '9',
+  };
+
+  /// Reconnect backoff: 2s, 4s, 8s ... capped at 30s. Pure/testable.
+  static Duration backoffDelay(int attempt) {
+    if (attempt < 1) return const Duration(seconds: 2);
+    var s = 2 << (attempt - 1);
+    if (s > 30) s = 30;
+    return Duration(seconds: s);
+  }
 
   /// Known webOS app IDs. Anything else launches via custom ID.
   static const Map<String, String> appIds = {

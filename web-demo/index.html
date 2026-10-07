@@ -78,6 +78,7 @@
   .rbtn { width:60px; min-height:60px; border-radius:50%; border:none; background:var(--group2); color:var(--ink);
     font-size:19px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
   .rbtn small { font-size:9px; color:var(--gray); }
+  .rbtn svg { display:block; margin:0 auto 3px; }
   .rbtn:active { background:var(--blue); }
   /* apps squircle grid */
   .apps { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:14px 16px; }
@@ -126,7 +127,7 @@
         <button class="btn blue" onclick="connect()">اتصال و Pairing</button>
         <button class="btn red" onclick="disconnect()">قطع الاتصال</button>
       </div>
-      <div class="foot">لازم الموبايل والتلفزيون على نفس الواي فاي. أول مرة اقبل Allow على شاشة التلفزيون — المفتاح بيتحفظ.</div>
+      <div class="foot">لازم الموبايل والتلفزيون على نفس الواي فاي. على التلفزيون فعّل “LG Connect Apps” من Settings ← Network (أو Mobile TV On في الموديلات القديمة)، وبعدين اقبل Allow على الشاشة — المفتاح بيتحفظ. المنافذ المستخدمة 3000 و3001.</div>
       <div class="statusline" id="status">جاهز</div>
     </div>
   </div>
@@ -138,14 +139,14 @@
       <div class="touchpad" id="pad">Touchpad</div>
       <div class="foot" id="padState">المؤشر غير متصل</div>
       <div class="rounds">
-        <button class="rbtn" onclick="key('up')">▲<small>فوق</small></button>
-        <button class="rbtn" onclick="key('ok')">●<small>OK</small></button>
-        <button class="rbtn" onclick="key('down')">▼<small>تحت</small></button>
+        <button class="rbtn" onclick="key('up')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg><small>فوق</small></button>
+        <button class="rbtn" onclick="key('ok')"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="12" r="6"/></svg><small>OK</small></button>
+        <button class="rbtn" onclick="key('down')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg><small>تحت</small></button>
       </div>
       <div class="rounds" style="border-top:none;padding-top:0">
-        <button class="rbtn" onclick="key('left')">◀<small>شمال</small></button>
-        <button class="rbtn" onclick="cmd('ssap://com.webos.applicationManager/launch',{id:'com.webos.app.home'})">⌂<small>Home</small></button>
-        <button class="rbtn" onclick="key('right')">▶<small>يمين</small></button>
+        <button class="rbtn" onclick="key('left')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><small>شمال</small></button>
+        <button class="rbtn" onclick="cmd('ssap://system.launcher/launch',{id:'com.webos.app.home'})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg><small>Home</small></button>
+        <button class="rbtn" onclick="key('right')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><small>يمين</small></button>
       </div>
     </div>
     <div class="card">
@@ -183,9 +184,9 @@
       <div class="pad"><input type="text" id="url" placeholder="https://.../video.mp4"></div>
       <div class="pad" style="border-top:none;padding-top:0"><button class="btn blue" onclick="cmd('ssap://com.webos.applicationManager/open',{target:document.getElementById('url').value.trim()})">فتح الرابط</button></div>
       <div class="rounds">
-        <button class="rbtn" onclick="cmd('ssap://media.controls/play',{})">▶<small>تشغيل</small></button>
-        <button class="rbtn" onclick="cmd('ssap://media.controls/pause',{})">⏸<small>إيقاف</small></button>
-        <button class="rbtn" onclick="cmd('ssap://media.controls/stop',{})">⏹<small>إنهاء</small></button>
+        <button class="rbtn" onclick="cmd('ssap://media.controls/play',{})"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg><small>تشغيل</small></button>
+        <button class="rbtn" onclick="cmd('ssap://media.controls/pause',{})"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><small>إيقاف</small></button>
+        <button class="rbtn" onclick="cmd('ssap://media.controls/stop',{})"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="6" width="12" height="12" rx="2"/></svg><small>إنهاء</small></button>
       </div>
     </div>
     <div class="card">
@@ -197,7 +198,7 @@
 </div>
 
 <script>
-let ws=null, ptr=null, id=0, pending={}, connected=false, ptrReady=false;
+let ws=null, ptr=null, id=0, pending={}, connected=false, ptrReady=false, manualOff=false, rcTries=0, myIp='';
 // --- tiny synth SFX (WebAudio, no files) ---
 let AC=null;
 function beep(f0,f1,ms,vol){
@@ -261,7 +262,9 @@ function checkNet(){
 function connect(){
   const ip=$('ip').value.trim();
   if(!ip){ setStatus('اكتب IP التلفزيون الأول'); return; }
-  disconnect(true); setStatus('بتصل... اقبل Allow على التلفزيون');
+  disconnect(true); manualOff=false;
+  myIp=ip;
+  setStatus('بتصل... اقبل Allow على التلفزيون');
   try{ ws=new WebSocket('ws://'+ip+':3000'); }catch(e){ setStatus('فشل الاتصال'); return; }
   const key=localStorage.getItem('lg_client_key');
   ws.onopen=()=>ws.send(JSON.stringify({type:'register',id:'register_0',payload:Object.assign(
@@ -277,9 +280,14 @@ function connect(){
       connected=true; setDot(true); setStatus('متصل ✔'); sfx.success(); openPointer(ip); tab(1); return; }
     if(m.id&&pending[m.id]){ pending[m.id](m); delete pending[m.id]; } };
   ws.onerror=()=>{ sfx.error(); setStatus('خطأ — نفس الواي فاي؟ الـ IP صح؟'); };
-  ws.onclose=()=>{ connected=false; ptrReady=false; setDot(false); setStatus('انقطع الاتصال'); $('padState').textContent='المؤشر غير متصل'; };
+  ws.onclose=()=>{ connected=false; ptrReady=false; setDot(false); $('padState').textContent='المؤشر غير متصل';
+    if(!manualOff&&myIp&&rcTries<5){ rcTries++; const w=Math.min(2*rcTries,10);
+      setStatus('انقطع الاتصال — إعادة محاولة خلال '+w+' ثواني…');
+      setTimeout(()=>{ if(!manualOff&&!connected){ $('ip').value=myIp; connect(); } },w*1000);
+    } else { setStatus('انقطع الاتصال'); } };
 }
-function disconnect(silent){ try{ws&&ws.close();}catch(e){} try{ptr&&ptr.close();}catch(e){}
+function disconnect(silent){ if(!silent) manualOff=true;
+  try{ws&&ws.close();}catch(e){} try{ptr&&ptr.close();}catch(e){}
   ws=null; ptr=null; connected=false; ptrReady=false; setDot(false); if(!silent) setStatus('انقطع الاتصال'); }
 function cmd(uri,payload){
   return new Promise((res,rej)=>{
@@ -289,9 +297,14 @@ function cmd(uri,payload){
     setTimeout(()=>{ if(pending[my]){delete pending[my]; rej('timeout');} },8000);
   }).catch(e=>setStatus('التلفزيون مردش ('+e+')'));
 }
-function key(k){ cmd('ssap://com.webos.service.api/input',{key:k}); }
+function key(k){ // verified input-socket names first, ssap fallback
+  const names={up:'UP',down:'DOWN',left:'LEFT',right:'RIGHT',ok:'ENTER',home:'HOME',back:'BACK'};
+  const n=names[k]||k.toUpperCase();
+  if(ptrReady&&ptr){ try{ ptr.send('type:button\nname:'+n+'\n\n'); return; }catch(e){} }
+  cmd('ssap://com.webos.service.api/input',{key:k});
+}
 function launch(appId,params){ if(!appId){ setStatus('اكتب App ID'); return; }
-  cmd('ssap://com.webos.applicationManager/launch',Object.assign({id:appId},params||{})); }
+  cmd('ssap://system.launcher/launch',Object.assign({id:appId},params||{})); }
 function openYT(){ const v=$('yt').value.trim();
   if(!v) return launch('youtube.leanback.v4');
   launch('youtube.leanback.v4',{contentTarget:v}); }
@@ -307,7 +320,7 @@ function openPointer(ip){
 }
 (function(){
   const pad=$('pad'); let lx=0, ly=0, sx=0, sy=0, t0=0, moved=0, raf=null, dx=0, dy=0;
-  function flush(){ if(ptrReady&&ptr&&(dx||dy)){ try{ptr.send('type:move\ndx:'+Math.round(dx)+'\ndy:'+Math.round(dy)+'\n');}catch(e){} dx=0; dy=0; } raf=null; }
+  function flush(){ if(ptrReady&&ptr&&(dx||dy)){ try{ptr.send('type:move\ndx:'+Math.round(dx)+'\ndy:'+Math.round(dy)+'\n\n');}catch(e){} dx=0; dy=0; } raf=null; }
   pad.addEventListener('pointerdown',e=>{ pad.setPointerCapture(e.pointerId);
     lx=sx=e.clientX; ly=sy=e.clientY; t0=Date.now(); moved=0; });
   pad.addEventListener('pointermove',e=>{ if(e.buttons===0&&e.pointerType==='mouse') return;
@@ -315,7 +328,7 @@ function openPointer(ip){
     moved+=Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy); sx=e.clientX; sy=e.clientY;
     if(!raf) raf=requestAnimationFrame(flush); });
   pad.addEventListener('pointerup',e=>{ if(raf){cancelAnimationFrame(raf);raf=null;flush();}
-    if(Date.now()-t0<300&&moved<24){ if(ptrReady&&ptr){try{ptr.send('type:click\n');}catch(x){}} else key('ok'); } });
+    if(Date.now()-t0<300&&moved<24){ if(ptrReady&&ptr){try{ptr.send('type:click\n\n');}catch(x){}} else key('ok'); } });
 })();
 tab(0);
 // remember last TV IP

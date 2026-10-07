@@ -22,14 +22,16 @@ jobs:
           python3 tools/ci_inject_perms.py
       - run: flutter pub get
       - name: Format code
-        run: dart format lib
+        run: dart format lib test
       - name: Commit formatting fixes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "style: auto-format Dart code"
-          file_pattern: "lib/**"
+          file_pattern: "lib/** test/**"
       - name: Analyze
-        run: flutter analyze lib
+        run: flutter analyze lib test
+      - name: Run unit tests (pure protocol, no device needed)
+        run: flutter test
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:

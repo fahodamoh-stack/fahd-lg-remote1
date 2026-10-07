@@ -15,8 +15,11 @@ dependencies:
   network_info_plus: any
   permission_handler: any
   audioplayers: any
+  flutter_secure_storage: any
 
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
   flutter_lints: ^4.0.0
 
 flutter:

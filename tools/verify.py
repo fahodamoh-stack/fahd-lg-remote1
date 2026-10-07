@@ -102,6 +102,16 @@ check("remembers IP (app)", "fa_last_ip" in src or "fa_last_ip" in main)
 check("remembers IP (demo)",
       "fa_last_ip" in (ROOT / "web-demo" / "index.html").read_text(encoding="utf-8"))
 check("forget TV option", "Forget saved TV" in main)
+check("secure storage for keys", "flutter_secure_storage" in src)
+check("secure wss fallback", "wss://" in src and "badCertificateCallback" in src)
+check("input-socket buttons", "inputButtons" in src and "getPointerInputSocket" in src)
+check("verified launch endpoint", "system.launcher/launch" in src)
+check("apps + sources APIs", "listApps" in src and "getExternalInputList" in src)
+check("number pad UI", "Numbers" in main and "typeText" in src)
+check("mock TV exists", (ROOT / "tools" / "mock_tv.dart").exists())
+check("protocol tests exist", (ROOT / "test" / "protocol_test.dart").exists())
+check("svg icons in demo",
+      (ROOT / "web-demo" / "index.html").read_text(encoding="utf-8").count("<svg") >= 6)
 check("no deprecated withOpacity", "withOpacity" not in main)
 check("no bad MediaQuery API", "maybeDisableAnimations" not in (
     ROOT / "lib" / "widgets" / "motion.dart").read_text(encoding="utf-8"))

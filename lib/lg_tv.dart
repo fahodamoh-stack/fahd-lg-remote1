@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'core/protocol/webos_messages.dart';
 
 /// LG webOS TV client.
@@ -12,7 +13,13 @@ class LgTv {
   WebSocketChannel? _ch;
   WebSocketChannel? _ptr;
   StreamSubscription? _sub;
+  Timer? _reconnectTimer;
   int _id = 0;
+  int _reconnectAttempt = 0;
+  bool _manualDisconnect = false;
+  bool _useSecure = false;
+  bool autoReconnect = true;
+  static const int maxReconnectAttempts = 5;
   final Map<String, Completer<Map<String, dynamic>>> _pending = {};
   final StreamController<LgState> _stateCtrl =
       StreamController<LgState>.broadcast();
@@ -57,6 +64,35 @@ class LgTv {
   /// Known webOS app IDs. Anything else can be launched via custom ID.
   static const Map<String, String> appIds = WebosMessages.appIds;
 
+  // ---------- Secure key storage (never plain text) ----------
+  static String _keyName(String tvIp) => 'lg_client_key_$tvIp';
+
+  Future<String?> _readKey(String tvIp) async {
+    try {
+      return await _secure.read(key: _keyName(tvIp)) ??
+          await _secure.read(key: 'lg_client_key');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _writeKey(String tvIp, String key) async {
+    try {
+      await _secure.write(key: 'lg_client_key', value: key);
+      await _secure.write(key: _keyName(tvIp), value: key);
+    } catch (_) {}
+  }
+
+  Future<void> forgetKeys() async {
+    try {
+      await _secure.delete(key: 'lg_client_key');
+      if (ip != null) await _secure.delete(key: _keyName(ip!));
+    } catch (_) {}
+  }
+
+  Future<bool> hasSavedKey(String tvIp) async =>
+      (await _readKey(tvIp))?.isNotEmpty ?? false;
+
   // ---------- Discovery (SSDP) ----------
   // Returns list of {ip, name, location}
   static Future<List<Map<String, String>>> discover({int seconds = 4}) async {
@@ -90,20 +126,50 @@ class LgTv {
     return found.values.toList();
   }
 
+  /// Opens the main socket. Throws on failure (caller tries next scheme).
+  Future<void> _open(String tvIp, {required bool secure}) async {
+    if (secure) {
+      final client = HttpClient();
+      client.badCertificateCallback = (_, __, ___) => true;
+      final sock = await WebSocket.connect(
+        'wss://$tvIp:3001',
+        customClient: client,
+      ).timeout(const Duration(seconds: 8));
+      _ch = IOWebSocketChannel(sock);
+    } else {
+      final sock = await WebSocket.connect(
+        'ws://$tvIp:3000',
+      ).timeout(const Duration(seconds: 8));
+      _ch = IOWebSocketChannel(sock);
+    }
+    _useSecure = secure;
+  }
+
   // ---------- Connect + pair ----------
+  // Plain ws://TV:3000 first; newer firmware requires secure wss://TV:3001
+  // (TV uses a self-signed cert, accepted explicitly here).
   Future<void> connect(String tvIp) async {
     disconnect();
+    _manualDisconnect = false;
     ip = tvIp;
-    final prefs = await SharedPreferences.getInstance();
-    clientKey = prefs.getString('lg_client_key_$tvIp') ??
-        prefs.getString('lg_client_key');
+    clientKey = await _readKey(tvIp);
 
-    final uri = Uri.parse('ws://$tvIp:3000');
-    try {
-      _ch = WebSocketChannel.connect(uri);
-    } catch (e) {
-      _emit('Cannot reach $tvIp:3000 — same Wi-Fi?', error: true);
-      rethrow;
+    Object? lastErr;
+    for (final secure in [false, true]) {
+      try {
+        await _open(tvIp, secure: secure);
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    if (lastErr != null || _ch == null) {
+      _emit(
+          'Cannot reach $tvIp (tried 3000 + secure 3001) — same Wi-Fi? '
+          'Enable “LG Connect Apps” in TV Network settings.',
+          error: true);
+      throw lastErr ?? StateError('Connection failed');
     }
 
     final registered = Completer<void>();
@@ -117,9 +183,9 @@ class LgTv {
           final key = m['payload']?['client-key']?.toString();
           if (key != null && key.isNotEmpty) {
             clientKey = key;
-            prefs.setString('lg_client_key', key);
-            prefs.setString('lg_client_key_$tvIp', key);
+            await _writeKey(tvIp, key);
           }
+          _reconnectAttempt = 0;
           if (!registered.isCompleted) registered.complete();
           _emit('Connected to $tvIp');
           return;
@@ -142,7 +208,16 @@ class LgTv {
       _emit('Connection error: $e', error: true);
     }, onDone: () {
       _ch = null;
-      _emit('Disconnected', error: true);
+      closePointer();
+      for (final c in _pending.values) {
+        if (!c.isCompleted) c.completeError('Disconnected');
+      }
+      _pending.clear();
+      if (_manualDisconnect || !autoReconnect) {
+        _emit('Disconnected', error: true);
+        return;
+      }
+      _scheduleReconnect();
     });
 
     final payload = buildRegisterPayload(savedKey: clientKey);
@@ -159,7 +234,32 @@ class LgTv {
     );
   }
 
+  /// Auto-reconnect with backoff after an unexpected drop.
+  void _scheduleReconnect() {
+    _reconnectAttempt++;
+    if (_reconnectAttempt > maxReconnectAttempts || ip == null) {
+      _reconnectAttempt = 0;
+      _emit('Disconnected — tap Connect to retry', error: true);
+      return;
+    }
+    final wait = WebosMessages.backoffDelay(_reconnectAttempt);
+    _emit('Reconnecting in ${wait.inSeconds}s… (try $_reconnectAttempt)');
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(wait, () async {
+      if (_manualDisconnect || connected) return;
+      try {
+        await connect(ip!);
+      } catch (_) {
+        // connect() emits its own status; onDone reschedules if needed.
+      }
+    });
+  }
+
   void disconnect() {
+    _manualDisconnect = true;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempt = 0;
     try {
       _sub?.cancel();
     } catch (_) {}
@@ -190,32 +290,87 @@ class LgTv {
   }
 
   // ---------- Remote ----------
-  Future<void> volumeUp() => _req('ssap://audio/volumeUp').then((_) {});
-  Future<void> volumeDown() => _req('ssap://audio/volumeDown').then((_) {});
-  Future<void> setVolume(int v) =>
-      _req('ssap://audio/setVolume', {'volume': clampVolume(v)}).then((_) {});
-  Future<void> setMuted(bool m) =>
-      _req('ssap://audio/setMuted', {'muted': m}).then((_) {});
-  Future<void> channelUp() => _req('ssap://tv/channelUp').then((_) {});
-  Future<void> channelDown() => _req('ssap://tv/channelDown').then((_) {});
-  Future<void> home() => _req('ssap://com.webos.applicationManager/launch',
-      {'id': 'com.webos.app.home'}).then((_) {});
-  Future<void> back() =>
-      _req('ssap://com.webos.service.ime/sendEnterKey').then((_) {});
-  Future<void> exitApp() async {
-    try {
-      await _req(
-          'ssap://com.webos.applicationManager/closeByAppId', {'id': '*'});
-    } catch (_) {}
+  // Button presses go through the input socket (verified names in
+  // WebosMessages.inputButtons), with ssap fallback when the TV
+  // refuses the pointer socket.
+  Future<void> press(String action) async {
+    final name = WebosMessages.inputButtons[action];
+    if (name == null) throw ArgumentError('Unknown button: $action');
+    if (pointerReady) {
+      try {
+        return await pointerButton(name);
+      } catch (_) {}
+    }
+    await _req('ssap://com.webos.service.api/input', {'key': action});
   }
 
-  Future<void> sendKey(String key) async {
+  Future<void> pointerButton(String name) async =>
+      _ptrSend(WebosMessages.pointerButtonMsg(name));
+
+  Future<void> volumeUp() => press('volUp').catchError((_) => _req('ssap://audio/volumeUp').then((_) {}));
+  Future<void> volumeDown() =>
+      press('volDown').catchError((_) => _req('ssap://audio/volumeDown').then((_) {}));
+  Future<void> setVolume(int v) =>
+      _req('ssap://audio/setVolume', {'volume': clampVolume(v)}).then((_) {});
+
+  Future<int> getVolume() async {
+    final res = await _req('ssap://audio/getVolume');
+    final v = res['payload']?['volume'];
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    throw StateError('No volume in response');
+  }
+
+  Future<bool> getMuted() async {
+    final res = await _req('ssap://audio/getVolume');
+    final m = res['payload']?['muted'];
+    if (m is bool) return m;
+    throw StateError('No mute state in response');
+  }
+
+  Future<void> setMuted(bool m) async {
     try {
-      await _req('ssap://com.webos.service.api/input', {'key': key});
+      await _req('ssap://audio/setMute', {'mute': m});
     } catch (_) {
-      await _req('ssap://system.notifications/createToast', {'message': key});
+      await _req('ssap://audio/setMuted', {'muted': m});
     }
   }
+
+  Future<void> channelUp() => press('chUp').catchError((_) => _req('ssap://tv/channelUp').then((_) {}));
+  Future<void> channelDown() =>
+      press('chDown').catchError((_) => _req('ssap://tv/channelDown').then((_) {}));
+
+  Future<void> currentChannel() async {
+    final res = await _req('ssap://tv/getCurrentChannel');
+    return res['payload'];
+  }
+
+  Future<void> home() => launchApp('com.webos.app.home');
+  Future<void> back() => press('back').catchError(
+      (_) => _req('ssap://com.webos.service.ime/sendEnterKey').then((_) {}));
+  Future<void> exitApp() async {
+    try {
+      await press('exit');
+    } catch (_) {
+      try {
+        await _req(
+            'ssap://com.webos.applicationManager/closeByAppId', {'id': '*'});
+      } catch (_) {}
+    }
+  }
+
+  Future<void> sendKey(String key) => press(key);
+
+  /// Sends text via the on-screen keyboard (IME). The TV must show
+  /// a text field for keystrokes to land.
+  Future<void> typeText(String text) => _req(
+          'ssap://com.webos.service.ime/insertText',
+          {'text': text, 'replace': 0}).then((_) {});
+  Future<void> deleteChars(int count) => _req(
+          'ssap://com.webos.service.ime/deleteCharacters', {'count': count})
+      .then((_) {});
+  Future<void> sendEnter() =>
+      _req('ssap://com.webos.service.ime/sendEnterKey').then((_) {});
 
   Future<void> toast(String msg) =>
       _req('ssap://system.notifications/createToast', {'message': msg})
@@ -226,30 +381,72 @@ class LgTv {
           .then((_) {});
 
   Future<void> launchApp(String appId, [Map<String, dynamic>? params]) =>
-      _req('ssap://com.webos.applicationManager/launch', {
+      _req('ssap://system.launcher/launch', {
         'id': appId,
         if (params != null) ...params,
       }).then((_) {});
+
+  /// Installed apps on the TV: [{id, title, ...}].
+  Future<List<Map<String, dynamic>>> listApps() async {
+    final res =
+        await _req('ssap://com.webos.applicationManager/listApps');
+    final apps = res['payload']?['apps'];
+    if (apps is List) {
+      return apps.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    throw StateError('TV did not return an app list');
+  }
+
+  /// Foreground app id, e.g. "youtube.leanback.v4".
+  Future<String?> foregroundApp() async {
+    try {
+      final res = await _req(
+          'ssap://com.webos.applicationManager/getForegroundAppInfo');
+      return res['payload']?['appId']?.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> closeApp(String appId) => _req(
+          'ssap://system.launcher/close', {'id': appId}).then((_) {});
+
+  /// TV inputs/sources: [{id, label, ...}].
+  Future<List<Map<String, dynamic>>> listSources() async {
+    final res = await _req('ssap://tv/getExternalInputList');
+    final devs = res['payload']?['devices'];
+    if (devs is List) {
+      return devs.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    throw StateError('TV did not return inputs');
+  }
+
+  Future<void> setSource(String inputId) =>
+      _req('ssap://tv/switchInput', {'inputId': inputId}).then((_) {});
 
   Future<void> youtube([String? contentIdOrUrl]) {
     if (contentIdOrUrl == null || contentIdOrUrl.isEmpty) {
       return launchApp('youtube.leanback.v4');
     }
     return launchApp('youtube.leanback.v4', {
-      'contentTarget': contentIdOrUrl,
+      'contentId': contentIdOrUrl,
     });
   }
 
   Future<void> netflix() => launchApp('netflix');
   Future<void> liveTv() => launchApp('com.webos.app.livetv');
 
-  Future<void> play() => _req('ssap://media.controls/play').then((_) {});
-  Future<void> pause() => _req('ssap://media.controls/pause').then((_) {});
-  Future<void> stop() => _req('ssap://media.controls/stop').then((_) {});
+  Future<void> play() => press('play').catchError((_) => _req('ssap://media.controls/play').then((_) {}));
+  Future<void> pause() =>
+      press('pause').catchError((_) => _req('ssap://media.controls/pause').then((_) {}));
+  Future<void> stop() => press('stop').catchError((_) => _req('ssap://media.controls/stop').then((_) {}));
+  Future<void> rewind() => _req('ssap://media.controls/rewind').then((_) {});
+  Future<void> fastForward() =>
+      _req('ssap://media.controls/fastForward').then((_) {});
 
   Future<void> powerOff() => _req('ssap://system/turnOff').then((_) {});
 
-  // ---------- Pointer (touchpad cursor) ----------
+  // ---------- Pointer (touchpad cursor + input buttons) ----------
   // Opens the TV's pointer input socket. Throws when the TV refuses
   // (older models) — callers should fall back to arrow keys.
   Future<void> connectPointer() async {
@@ -259,7 +456,17 @@ class LgTv {
         'ssap://com.webos.service.networkinput/getPointerInputSocket');
     final path = res['payload']?['socketPath']?.toString() ?? '';
     if (path.isEmpty) throw StateError('Pointer not supported by this TV');
-    _ptr = WebSocketChannel.connect(Uri.parse('ws://$ip:3000$path'));
+    if (_useSecure) {
+      final client = HttpClient();
+      client.badCertificateCallback = (_, __, ___) => true;
+      final sock = await WebSocket.connect(
+        'wss://$ip:3001$path',
+        customClient: client,
+      ).timeout(const Duration(seconds: 8));
+      _ptr = IOWebSocketChannel(sock);
+    } else {
+      _ptr = WebSocketChannel.connect(Uri.parse('ws://$ip:3000$path'));
+    }
   }
 
   void _ptrSend(String msg) {
