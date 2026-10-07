@@ -164,8 +164,9 @@ abstract final class WebosMessages {
 
   /// Reconnect backoff: 2s, 4s, 8s ... capped at 30s. Pure/testable.
   static Duration backoffDelay(int attempt) {
-    if (attempt < 1) return const Duration(seconds: 2);
-    var s = 2 << (attempt - 1);
+    var a = attempt < 1 ? 1 : attempt;
+    if (a > 5) a = 5; // 2<<4 = 32 already hits the cap; avoids overflow
+    var s = 2 << (a - 1);
     if (s > 30) s = 30;
     return Duration(seconds: s);
   }
